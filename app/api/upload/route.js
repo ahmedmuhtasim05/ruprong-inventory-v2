@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { optimizeImage } from '../../../../lib/image-optimizer';
-import { db } from '../../../../lib/db';
+import { optimizeImage } from '../../../lib/image-optimizer';
+import { db } from '../../../lib/db';
 
 export async function POST(request) {
   try {
