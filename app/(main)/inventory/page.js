@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { nextSerialSku } from '../../../lib/sku';
 
 const CATEGORIES = ['Ring', 'Necklace', 'Earring', 'Bracelet', 'Bangle', 'Anklet', 'Pendant', 'Chain', 'Set', 'Other'];
 const EMPTY_FORM = { id: null, sku: '', name: '', category: '', quantity: '0', price: '', cost_price: '', notes: '', image_url: '' };
@@ -121,6 +122,7 @@ export default function InventoryPage() {
   }
 
   const totalUnits = items.reduce((s, it) => s + it.quantity, 0);
+  const nextSku = nextSerialSku(items.map((it) => it.sku));
 
   return (
     <div>
@@ -132,7 +134,7 @@ export default function InventoryPage() {
         <h2>{form.id ? 'Edit Item' : 'Add Item'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="row">
-            <div className="field"><label>SKU (blank = auto)</label><input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} /></div>
+            <div className="field"><label>SKU (blank = auto, next: {nextSku})</label><input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder={nextSku} /></div>
             <div className="field"><label>Name*</label><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div className="field"><label>Category</label><input list="categories" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /><datalist id="categories">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist></div>
           </div>
@@ -179,7 +181,7 @@ export default function InventoryPage() {
         {importSummary && (
           <div className="msg msg-success" style={{ marginTop: 10 }}>
             Import done: {importSummary.inserted} added, {importSummary.updated} updated
-            {importSummary.nextSku ? ` — next SKU: BN${importSummary.nextSku}` : ''}
+            {importSummary.nextSku ? ` — next SKU: ${importSummary.nextSku}` : ''}
             {importSummary.errors.length > 0 && `, ${importSummary.errors.length} row(s) skipped`}.
           </div>
         )}

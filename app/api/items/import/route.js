@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '../../../../lib/db';
+import { getNextSerialSku } from '../../../../lib/sku';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
@@ -37,43 +38,51 @@ export async function POST(request) {
         continue;
       }
 
-      try {
-        // Check if item exists by SKU
-        const existing = await db.query('SELECT id FROM items WHERE sku = $1', [sku || '']);
+      // Check if item exists by SKU
+      const existing = await db.query('SELECT id FROM items WHERE sku = $1', [sku || '']);
 
-        if (existing.rows.length > 0) {
-          // Update existing
-          await db.query(
-            'UPDATE items SET name=$1, category=$2, quantity=$3, price=$4, cost_price=$5, notes=$6 WHERE sku=$7',
-            [name, category || '', parseInt(quantity) || 0, parseFloat(price) || 0, parseFloat(cost_price) || null, notes || '', sku]
-          );
-          updated++;
-        } else {
-          // Insert new
-          let finalSku = sku;
-          if (!finalSku) {
-            const maxResult = await db.query(
-              "SELECT MAX(CAST(SUBSTRING(sku FROM 3) AS INTEGER)) as max_num FROM items WHERE sku LIKE 'BN%'"
+      if (existing.rows.length > 0) {
+        // Update existing
+        await db.query(
+          'UPDATE items SET name=$1, category=$2, quantity=$3, price=$4, cost_price=$5, notes=$6 WHERE sku=$7',
+          [name, category || '', parseInt(quantity) || 0, parseFloat(price) || 0, parseFloat(cost_price) || null, notes || '', sku]
+        );
+        updated++;
+      } else {
+        // Insert new — generate a serial SKU (BN1, BN2, ...) when blank
+        const autoSku = !sku || !String(sku).trim();
+        let finalSku = autoSku ? null : String(sku).trim();
+        let attempts = 0;
+        let done = false;
+
+        while (attempts <= 5 && !done) {
+          if (!finalSku) finalSku = await getNextSerialSku(db);
+          try {
+            await db.query(
+              'INSERT INTO items (sku, name, category, quantity, price, cost_price, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              [finalSku, name, category || '', parseInt(quantity) || 0, parseFloat(price) || 0, parseFloat(cost_price) || null, notes || '']
             );
-            const nextNum = (maxResult.rows[0]?.max_num || 0) + 1;
-            finalSku = `BN${nextNum}`;
+            inserted++;
+            done = true;
+          } catch (err) {
+            if (err.code === '23505') {
+              if (autoSku && attempts < 5) {
+                attempts++;
+                finalSku = null;
+                continue;
+              }
+              errors.push({ row: i + 2, message: `SKU ${finalSku} already exists` });
+            } else {
+              errors.push({ row: i + 2, message: err.message });
+            }
+            done = true;
           }
-          await db.query(
-            'INSERT INTO items (sku, name, category, quantity, price, cost_price, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [finalSku, name, category || '', parseInt(quantity) || 0, parseFloat(price) || 0, parseFloat(cost_price) || null, notes || '']
-          );
-          inserted++;
         }
-      } catch (err) {
-        errors.push({ row: i + 2, message: err.message });
       }
     }
 
-    // Get next SKU
-    const maxResult = await db.query(
-      "SELECT MAX(CAST(SUBSTRING(sku FROM 3) AS INTEGER)) as max_num FROM items WHERE sku LIKE 'BN%'"
-    );
-    const nextSku = (maxResult.rows[0]?.max_num || 0) + 1;
+    // Next available serial SKU
+    const nextSku = await getNextSerialSku(db);
 
     return NextResponse.json({ inserted, updated, errors, nextSku });
   } catch (error) {
