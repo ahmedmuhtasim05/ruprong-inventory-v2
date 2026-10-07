@@ -33,6 +33,40 @@ export async function PUT(request, { params }) {
     // Delete old line items
     await client.query('DELETE FROM invoice_items WHERE invoice_id = $1', [id]);
 
+    // Validate quantities and total up requested stock per inventory item
+    const requestedByItem = new Map();
+    for (const li of line_items) {
+      const qty = parseInt(li.quantity, 10);
+      if (!Number.isFinite(qty) || qty <= 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json({ error: 'Line item quantity must be a positive number' }, { status: 400 });
+      }
+      if (li.item_id) {
+        const key = String(li.item_id);
+        requestedByItem.set(key, (requestedByItem.get(key) || 0) + qty);
+      }
+    }
+
+    // Server-side stock validation (original stock was restored above)
+    if (requestedByItem.size > 0) {
+      const ids = [...requestedByItem.keys()].map(Number);
+      const stockResult = await client.query(
+        'SELECT id, name, quantity FROM items WHERE id = ANY($1)',
+        [ids]
+      );
+      const insufficient = [];
+      for (const row of stockResult.rows) {
+        const requested = requestedByItem.get(String(row.id)) || 0;
+        if (requested > row.quantity) {
+          insufficient.push(`${row.name}: ${requested} requested, only ${row.quantity} in stock`);
+        }
+      }
+      if (insufficient.length > 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json({ error: 'Insufficient stock', details: insufficient }, { status: 400 });
+      }
+    }
+
     // Calculate new total
     let subtotal = 0;
     for (const li of line_items) {

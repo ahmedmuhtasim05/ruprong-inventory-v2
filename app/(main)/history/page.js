@@ -10,9 +10,24 @@ export default function HistoryPage() {
   const [items, setItems] = useState([]);
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async (q) => { const res = await fetch(`/api/invoices?search=${encodeURIComponent(q || '')}`); const data = await res.json(); setInvoices(data.invoices || []); }, []);
   useEffect(() => { load(search); }, [search, load]);
+
+  async function createZeroStockInvoice() {
+    setMsg('');
+    if (!confirm('Create (or refresh) the invoice covering all out-of-stock items?')) return;
+    setCreating(true);
+    try {
+      const res = await fetch('/api/invoices/zero-stock', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { setMsg(data.error || 'Could not create invoice.'); return; }
+      setMsg(`Invoice ${data.invoice.invoice_no} saved with ${data.itemCount} out-of-stock items.`);
+      setTimeout(() => setMsg(''), 5000);
+      load(search);
+    } finally { setCreating(false); }
+  }
 
   async function deleteInvoice(inv) {
     if (!confirm(`Delete invoice ${inv.invoice_no}? Stock will be restored.`)) return;
@@ -59,6 +74,7 @@ export default function HistoryPage() {
       {msg && <div className="msg msg-success">{msg}</div>}
       <div className="card">
         <div className="field"><label>Search</label><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Invoice no, customer, phone, parcel" /></div>
+        <button className="btn btn-sm" style={{ marginLeft: 8, whiteSpace: 'nowrap' }} onClick={createZeroStockInvoice} disabled={creating}>{creating ? 'Creating...' : 'Create Invoice for Out-of-Stock Items'}</button>
         <table style={{ marginTop: 12 }}><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Phone</th><th>Parcel</th><th>Total</th><th></th></tr></thead>
           <tbody>{invoices.map((inv) => <tr key={inv.id}><td>{inv.invoice_no}</td><td>{new Date(inv.invoice_date).toISOString().slice(0, 10)}</td><td>{inv.customer_name}</td><td>{inv.customer_phone}</td><td>{inv.parcel_id}</td><td>{Number(inv.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td><a className="btn btn-sm" href={`/api/invoices/${inv.id}/pdf`} target="_blank" rel="noreferrer">PDF</a> <button className="btn btn-sm btn-primary" onClick={() => startEdit(inv)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => deleteInvoice(inv)}>Delete</button></td></tr>)}{invoices.length === 0 && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 20 }}>No invoices yet.</td></tr>}</tbody>
         </table>

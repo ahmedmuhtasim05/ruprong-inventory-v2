@@ -16,13 +16,34 @@ export async function GET(request, { params }) {
 
   // Create PDF
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]); // A4
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+  let page = pdfDoc.addPage([595, 842]); // A4
   let y = 800;
 
-  // Header
+  // Start a new page with a repeated header (for long invoices)
+  function newPage(continued) {
+    page = pdfDoc.addPage([595, 842]);
+    y = 800;
+    page.drawText('RupRong Inventory', { x: 50, y, size: 16, font: boldFont, color: rgb(0.72, 0.53, 0.04) });
+    y -= 28;
+    page.drawText(`Invoice: ${invoice.invoice_no}${continued ? ' (continued)' : ''}`, { x: 50, y, size: 12, font: boldFont });
+    y -= 20;
+    page.drawText(`Date: ${invoice.invoice_date}`, { x: 50, y, size: 10, font });
+    y -= 20;
+    page.drawText(`Customer: ${invoice.customer_name}`, { x: 50, y, size: 10, font });
+    y -= 30;
+    page.drawText('Description', { x: 50, y, size: 10, font: boldFont });
+    page.drawText('Qty', { x: 300, y, size: 10, font: boldFont });
+    page.drawText('Price', { x: 350, y, size: 10, font: boldFont });
+    page.drawText('Total', { x: 450, y, size: 10, font: boldFont });
+    y -= 5;
+    page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+    y -= 15;
+  }
+
+  // Header (first page)
   page.drawText('RupRong Inventory', { x: 50, y, size: 20, font: boldFont, color: rgb(0.72, 0.53, 0.04) });
   y -= 30;
   page.drawText(`Invoice: ${invoice.invoice_no}`, { x: 50, y, size: 12, font: boldFont });
@@ -45,8 +66,9 @@ export async function GET(request, { params }) {
   page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
   y -= 15;
 
-  // Items
+  // Items — paginate instead of drawing off the page
   for (const item of items) {
+    if (y < 100) newPage(true);
     page.drawText(item.description, { x: 50, y, size: 9, font });
     page.drawText(String(item.quantity), { x: 300, y, size: 9, font });
     page.drawText(parseFloat(item.unit_price).toFixed(2), { x: 350, y, size: 9, font });
@@ -54,6 +76,7 @@ export async function GET(request, { params }) {
     y -= 15;
   }
 
+  if (y < 120) newPage(true);
   y -= 10;
   page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
   y -= 20;
