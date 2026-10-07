@@ -5,6 +5,14 @@ import { nextSerialSku } from '../../../lib/sku';
 const CATEGORIES = ['Ring', 'Necklace', 'Earring', 'Bracelet', 'Bangle', 'Anklet', 'Pendant', 'Chain', 'Set', 'Other'];
 const EMPTY_FORM = { id: null, sku: '', name: '', category: '', quantity: '0', price: '', cost_price: '', notes: '', image_url: '' };
 
+// Days a product has been sitting in inventory since it was inserted
+function agingDays(createdAt) {
+  if (!createdAt) return '—';
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(created)) return '—';
+  return Math.max(0, Math.floor((Date.now() - created) / 86400000));
+}
+
 // Lazy thumbnail: only items flagged has_image trigger a request,
 // and only for their own image — list payloads stay small.
 function ItemThumb({ item, onOpen }) {
@@ -217,7 +225,7 @@ export default function InventoryPage() {
         <p className="muted" style={{ marginTop: 8 }}>CSV/Excel columns: SKU, Name, Category, Quantity, Selling Price, Cost Price, Notes</p>
         <p className="muted">{items.length} item types | {totalUnits} units in stock</p>
         <table>
-          <thead><tr><th></th><th>Image</th><th>SKU</th><th>Name</th><th>Category</th><th>Qty</th><th>Price</th><th>Cost</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Image</th><th>SKU</th><th>Name</th><th>Category</th><th>Qty</th><th>Price</th><th>Cost</th><th>Aging Days</th><th></th></tr></thead>
           <tbody>
             {items.map((it) => (
               <tr key={it.id} className={it.quantity <= 3 ? 'low-stock' : ''}>
@@ -226,10 +234,11 @@ export default function InventoryPage() {
                 <td>{it.sku}</td><td>{it.name}</td><td>{it.category}</td><td>{it.quantity}</td>
                 <td>{Number(it.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 <td>{it.cost_price != null ? Number(it.cost_price).toLocaleString(undefined, { minimumFractionDigits: 2 }) : ''}</td>
+                <td>{agingDays(it.created_at)}</td>
                 <td><button className="btn btn-sm" onClick={() => editRow(it)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => deleteRow(it.id)}>Delete</button></td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan={9} className="muted" style={{ padding: 20, textAlign: 'center' }}>No items yet.</td></tr>}
+            {items.length === 0 && <tr><td colSpan={10} className="muted" style={{ padding: 20, textAlign: 'center' }}>No items yet.</td></tr>}
           </tbody>
         </table>
       </div>
