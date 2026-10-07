@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { db } from '../../../lib/db';
 import { compareItemsBySku, getNextSerialSku } from '../../../lib/sku';
 
+// List views must stay fast: the heavy base64 image_url column is
+// excluded here and fetched per item via /api/items/[id]/image.
+const LIST_COLUMNS = 'id, sku, name, category, quantity, price, cost_price, notes, (image_url IS NOT NULL) AS has_image, created_at, updated_at';
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search') || '';
@@ -9,11 +13,11 @@ export async function GET(request) {
   let result;
   if (search) {
     result = await db.query(
-      `SELECT * FROM items WHERE name ILIKE $1 OR sku ILIKE $2 OR category ILIKE $3`,
+      `SELECT ${LIST_COLUMNS} FROM items WHERE name ILIKE $1 OR sku ILIKE $2 OR category ILIKE $3`,
       [`%${search}%`, `%${search}%`, `%${search}%`]
     );
   } else {
-    result = await db.query('SELECT * FROM items');
+    result = await db.query(`SELECT ${LIST_COLUMNS} FROM items`);
   }
 
   // Show SKUs in serial order: BN1, BN2, BN3, ...

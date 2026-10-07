@@ -5,6 +5,28 @@ import { nextSerialSku } from '../../../lib/sku';
 const CATEGORIES = ['Ring', 'Necklace', 'Earring', 'Bracelet', 'Bangle', 'Anklet', 'Pendant', 'Chain', 'Set', 'Other'];
 const EMPTY_FORM = { id: null, sku: '', name: '', category: '', quantity: '0', price: '', cost_price: '', notes: '', image_url: '' };
 
+// Lazy thumbnail: only items flagged has_image trigger a request,
+// and only for their own image — list payloads stay small.
+function ItemThumb({ item, onOpen }) {
+  const [url, setUrl] = useState(null);
+  const [loaded, setLoaded] = useState(!item.has_image);
+
+  useEffect(() => {
+    if (!item.has_image) return;
+    let alive = true;
+    fetch(`/api/items/${item.id}/image`)
+      .then((r) => r.json())
+      .then((d) => { if (alive) { setUrl(d.image_url); setLoaded(true); } })
+      .catch(() => { if (alive) setLoaded(true); });
+    return () => { alive = false; };
+  }, [item.id, item.has_image]);
+
+  if (!loaded || !url) {
+    return <div style={{ width: 40, height: 40, borderRadius: 4, background: '#f4f0ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>—</div>;
+  }
+  return <img src={url} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }} onClick={() => onOpen(url)} />;
+}
+
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState('');
@@ -75,7 +97,14 @@ export default function InventoryPage() {
   }
 
   function editRow(item) {
-    setForm({ id: item.id, sku: item.sku, name: item.name, category: item.category || '', quantity: String(item.quantity), price: String(item.price), cost_price: item.cost_price == null ? '' : String(item.cost_price), notes: item.notes || '', image_url: item.image_url || '' });
+    setForm({ id: item.id, sku: item.sku, name: item.name, category: item.category || '', quantity: String(item.quantity), price: String(item.price), cost_price: item.cost_price == null ? '' : String(item.cost_price), notes: item.notes || '', image_url: '' });
+    // Load the stored image on demand so edits keep it
+    if (item.has_image) {
+      fetch(`/api/items/${item.id}/image`)
+        .then((r) => r.json())
+        .then((d) => setForm((prev) => (prev.id === item.id ? { ...prev, image_url: d.image_url || '' } : prev)))
+        .catch(() => {});
+    }
   }
 
   async function deleteRow(id) {
@@ -193,7 +222,7 @@ export default function InventoryPage() {
             {items.map((it) => (
               <tr key={it.id} className={it.quantity <= 3 ? 'low-stock' : ''}>
                 <td><input type="checkbox" checked={selected.has(it.id)} onChange={() => toggleSelect(it.id)} /></td>
-                <td>{it.image_url ? <img src={it.image_url} alt={it.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }} onClick={() => setLightboxImage(it.image_url)} /> : <div style={{ width: 40, height: 40, borderRadius: 4, background: '#f4f0ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>—</div>}</td>
+                <td><ItemThumb item={it} onOpen={setLightboxImage} /></td>
                 <td>{it.sku}</td><td>{it.name}</td><td>{it.category}</td><td>{it.quantity}</td>
                 <td>{Number(it.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 <td>{it.cost_price != null ? Number(it.cost_price).toLocaleString(undefined, { minimumFractionDigits: 2 }) : ''}</td>

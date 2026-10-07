@@ -8,9 +8,9 @@ export async function GET(request) {
   let result;
   if (ids) {
     const idArray = ids.split(',').map(Number);
-    result = await db.query('SELECT * FROM items WHERE id = ANY($1) ORDER BY name', [idArray]);
+    result = await db.query('SELECT sku, name, category, quantity, price, cost_price, notes FROM items WHERE id = ANY($1) ORDER BY name', [idArray]);
   } else {
-    result = await db.query('SELECT * FROM items ORDER BY name');
+    result = await db.query('SELECT sku, name, category, quantity, price, cost_price, notes FROM items ORDER BY name');
   }
 
   const items = result.rows;
