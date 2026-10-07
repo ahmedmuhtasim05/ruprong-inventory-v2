@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
-import { updateUser, deleteUser } from '../../../../../lib/auth';
+import { updateUser, deleteUser, getCurrentUserFromRequest } from '../../../../../lib/auth';
 
 export async function PUT(request, { params }) {
   try {
     const { id } = params;
-    const { username, password } = await request.json();
-    const user = await updateUser(parseInt(id), username, password);
+    const { username, password, role_id } = await request.json();
+    // Only superadmins may change a user's role
+    if (role_id !== undefined && role_id !== null) {
+      const me = await getCurrentUserFromRequest(request);
+      if (!me?.is_super) {
+        return NextResponse.json({ error: 'Superadmin role required to assign roles' }, { status: 403 });
+      }
+    }
+    const user = await updateUser(parseInt(id), username, password, role_id);
     return NextResponse.json({ user });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
