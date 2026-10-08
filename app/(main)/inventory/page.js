@@ -68,8 +68,8 @@ export default function InventoryPage() {
     function update() {
       const addH = addCardRef.current ? addCardRef.current.offsetHeight : 0;
       const searchH = searchCardRef.current ? searchCardRef.current.offsetHeight : 0;
-      setSearchTop(61 + addH + 20);
-      setTheadTop(61 + addH + 20 + searchH + 20);
+      setSearchTop(60 + addH);
+      setTheadTop(60 + addH + searchH);
     }
     update();
     window.addEventListener('resize', update);
@@ -194,7 +194,7 @@ export default function InventoryPage() {
       {error && <div className="msg msg-error">{error}</div>}
       {success && <div className="msg msg-success">{success}</div>}
 
-      <div className="card" ref={addCardRef} style={{ position: 'sticky', top: 61, zIndex: 40, boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
+      <div className="card" ref={addCardRef} style={{ position: 'sticky', top: 60, zIndex: 40, boxShadow: '0 6px 14px rgba(0,0,0,0.06)', marginBottom: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
         <h2>{form.id ? 'Edit Item' : 'Add Item'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="row">
@@ -234,7 +234,7 @@ export default function InventoryPage() {
         </form>
       </div>
 
-      <div className="card" ref={searchCardRef} style={{ position: 'sticky', top: searchTop, zIndex: 35, boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
+      <div className="card" ref={searchCardRef} style={{ position: 'sticky', top: searchTop, zIndex: 35, boxShadow: '0 6px 14px rgba(0,0,0,0.06)', marginBottom: 0, borderRadius: 0 }}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div className="field"><label>Search</label><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, SKU, or category" /></div>
           <div className="row">
@@ -253,7 +253,7 @@ export default function InventoryPage() {
         <p className="muted">{items.length} item types | {totalUnits} units in stock</p>
       </div>
 
-      <div className="card">
+      <div className="card" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <table>
           <thead><tr><th style={thStyle}></th><th style={thStyle}>Image</th><th style={thStyle}>SKU</th><th style={thStyle}>Name</th><th style={thStyle}>Category</th><th style={thStyle}>Qty</th><th style={thStyle}>Price</th><th style={thStyle}>Cost</th><th style={thStyle}>Aging Days</th><th style={thStyle}></th></tr></thead>
           <tbody>
