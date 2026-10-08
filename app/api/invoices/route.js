@@ -72,7 +72,7 @@ export async function POST(request) {
     // Calculate total
     let subtotal = 0;
     for (const li of line_items) {
-      subtotal += li.line_total;
+      subtotal += parseFloat(li.line_total) || 0;
     }
     const dVal = parseFloat(discount_value) || 0;
     let discountAmount = discount_type === 'percent' ? subtotal * (dVal / 100) : dVal;
