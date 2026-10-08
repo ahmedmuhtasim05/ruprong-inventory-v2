@@ -21,23 +21,14 @@ function agingDays(item) {
 // Lazy thumbnail: only items flagged has_image trigger a request,
 // and only for their own image — list payloads stay small.
 function ItemThumb({ item, onOpen }) {
-  const [url, setUrl] = useState(null);
-  const [loaded, setLoaded] = useState(!item.has_image);
+  // Direct image URL — the endpoint streams raw bytes with caching,
+  // so thumbs render without per-item JSON fetches.
+  const src = item.has_image ? `/api/items/${item.id}/image` : null;
 
-  useEffect(() => {
-    if (!item.has_image) return;
-    let alive = true;
-    fetch(`/api/items/${item.id}/image`)
-      .then((r) => r.json())
-      .then((d) => { if (alive) { setUrl(d.image_url); setLoaded(true); } })
-      .catch(() => { if (alive) setLoaded(true); });
-    return () => { alive = false; };
-  }, [item.id, item.has_image]);
-
-  if (!loaded || !url) {
+  if (!src) {
     return <div style={{ width: 40, height: 40, borderRadius: 4, background: '#f4f0ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>—</div>;
   }
-  return <img src={url} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }} onClick={() => onOpen(url)} />;
+  return <img src={src} alt={item.name} loading="lazy" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }} onClick={() => onOpen(src)} />;
 }
 
 export default function InventoryPage() {
@@ -133,9 +124,9 @@ export default function InventoryPage() {
 
   function editRow(item) {
     setForm({ id: item.id, sku: item.sku, name: item.name, category: item.category || '', quantity: String(item.quantity), price: String(item.price), cost_price: item.cost_price == null ? '' : String(item.cost_price), notes: item.notes || '', image_url: '' });
-    // Load the stored image on demand so edits keep it
+    // Load the stored image on demand so edits keep it (data URL form)
     if (item.has_image) {
-      fetch(`/api/items/${item.id}/image`)
+      fetch(`/api/items/${item.id}/image?format=data`)
         .then((r) => r.json())
         .then((d) => setForm((prev) => (prev.id === item.id ? { ...prev, image_url: d.image_url || '' } : prev)))
         .catch(() => {});

@@ -4,28 +4,20 @@ import { useEffect, useState, useCallback } from 'react';
 // Lazy product thumbnail (same approach as the inventory tab):
 // only items that have an image trigger a request.
 function ItemThumb({ item }) {
-  const [url, setUrl] = useState(null);
-  const [loaded, setLoaded] = useState(!item.has_image);
+  // Direct image URL (endpoint streams raw bytes with ETag caching)
+  // so thumbs render without per-item JSON fetches.
+  const src = item.has_image ? `/api/items/${item.id}/image` : null;
   const [hover, setHover] = useState(false);
 
-  useEffect(() => {
-    if (!item.has_image) return;
-    let alive = true;
-    fetch(`/api/items/${item.id}/image`)
-      .then((r) => r.json())
-      .then((d) => { if (alive) { setUrl(d.image_url); setLoaded(true); } })
-      .catch(() => { if (alive) setLoaded(true); });
-    return () => { alive = false; };
-  }, [item.id, item.has_image]);
-
-  if (!loaded || !url) {
+  if (!src) {
     return <div style={{ width: 28, height: 28, borderRadius: 4, background: '#f4f0ea', flexShrink: 0 }} />;
   }
   return (
     <>
       <img
-        src={url}
+        src={src}
         alt={item.name}
+        loading="lazy"
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, flexShrink: 0, cursor: 'zoom-in' }}
@@ -33,7 +25,7 @@ function ItemThumb({ item }) {
       {hover && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ background: 'white', padding: 12, borderRadius: 8, textAlign: 'center', maxWidth: '80vw' }}>
-            <img src={url} alt={item.name} style={{ maxWidth: '70vw', maxHeight: '62vh', objectFit: 'contain', borderRadius: 6 }} />
+            <img src={src} alt={item.name} style={{ maxWidth: '70vw', maxHeight: '62vh', objectFit: 'contain', borderRadius: 6 }} />
             <p style={{ fontWeight: 600, marginTop: 8, color: '#333' }}>{item.sku} - {item.name}</p>
           </div>
         </div>
