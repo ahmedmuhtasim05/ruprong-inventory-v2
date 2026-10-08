@@ -57,6 +57,33 @@ export default function InventoryPage() {
 
   useEffect(() => { load(search); }, [search, load]);
 
+  // Stacked sticky offsets as the user scrolls: Add Item card, then the
+  // search card, then the table column headers.
+  const addCardRef = useRef(null);
+  const searchCardRef = useRef(null);
+  const [searchTop, setSearchTop] = useState(200);
+  const [theadTop, setTheadTop] = useState(300);
+
+  useEffect(() => {
+    function update() {
+      const addH = addCardRef.current ? addCardRef.current.offsetHeight : 0;
+      const searchH = searchCardRef.current ? searchCardRef.current.offsetHeight : 0;
+      setSearchTop(61 + addH + 20);
+      setTheadTop(61 + addH + 20 + searchH + 20);
+    }
+    update();
+    window.addEventListener('resize', update);
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(update);
+      if (addCardRef.current) ro.observe(addCardRef.current);
+      if (searchCardRef.current) ro.observe(searchCardRef.current);
+    }
+    return () => { window.removeEventListener('resize', update); if (ro) ro.disconnect(); };
+  }, []);
+
+  const thStyle = { position: 'sticky', top: theadTop, zIndex: 30, background: 'var(--card-bg)' };
+
   function flash(setter, msg) {
     setter(msg);
     setTimeout(() => setter(''), 4000);
@@ -167,7 +194,7 @@ export default function InventoryPage() {
       {error && <div className="msg msg-error">{error}</div>}
       {success && <div className="msg msg-success">{success}</div>}
 
-      <div className="card" style={{ position: 'sticky', top: 61, zIndex: 40, boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
+      <div className="card" ref={addCardRef} style={{ position: 'sticky', top: 61, zIndex: 40, boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
         <h2>{form.id ? 'Edit Item' : 'Add Item'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="row">
@@ -207,7 +234,7 @@ export default function InventoryPage() {
         </form>
       </div>
 
-      <div className="card">
+      <div className="card" ref={searchCardRef} style={{ position: 'sticky', top: searchTop, zIndex: 35, boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div className="field"><label>Search</label><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, SKU, or category" /></div>
           <div className="row">
@@ -224,8 +251,11 @@ export default function InventoryPage() {
         )}
         <p className="muted" style={{ marginTop: 8 }}>CSV/Excel columns: SKU, Name, Category, Quantity, Selling Price, Cost Price, Notes</p>
         <p className="muted">{items.length} item types | {totalUnits} units in stock</p>
+      </div>
+
+      <div className="card">
         <table>
-          <thead><tr><th></th><th>Image</th><th>SKU</th><th>Name</th><th>Category</th><th>Qty</th><th>Price</th><th>Cost</th><th>Aging Days</th><th></th></tr></thead>
+          <thead><tr><th style={thStyle}></th><th style={thStyle}>Image</th><th style={thStyle}>SKU</th><th style={thStyle}>Name</th><th style={thStyle}>Category</th><th style={thStyle}>Qty</th><th style={thStyle}>Price</th><th style={thStyle}>Cost</th><th style={thStyle}>Aging Days</th><th style={thStyle}></th></tr></thead>
           <tbody>
             {items.map((it) => (
               <tr key={it.id} className={it.quantity <= 3 ? 'low-stock' : ''}>
