@@ -1,6 +1,28 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 
+// Lazy product thumbnail (same approach as the inventory tab):
+// only items that have an image trigger a request.
+function ItemThumb({ item }) {
+  const [url, setUrl] = useState(null);
+  const [loaded, setLoaded] = useState(!item.has_image);
+
+  useEffect(() => {
+    if (!item.has_image) return;
+    let alive = true;
+    fetch(`/api/items/${item.id}/image`)
+      .then((r) => r.json())
+      .then((d) => { if (alive) { setUrl(d.image_url); setLoaded(true); } })
+      .catch(() => { if (alive) setLoaded(true); });
+    return () => { alive = false; };
+  }, [item.id, item.has_image]);
+
+  if (!loaded || !url) {
+    return <div style={{ width: 28, height: 28, borderRadius: 4, background: '#f4f0ea', flexShrink: 0 }} />;
+  }
+  return <img src={url} alt={item.name} style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />;
+}
+
 export default function InvoicePage() {
   const [items, setItems] = useState([]);
   const [customerName, setCustomerName] = useState('');
@@ -11,6 +33,7 @@ export default function InvoicePage() {
   const [invoiceNo, setInvoiceNo] = useState('');
   const [lineItems, setLineItems] = useState([]);
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [customDesc, setCustomDesc] = useState('');
   const [qty, setQty] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
@@ -36,6 +59,7 @@ export default function InvoicePage() {
   useEffect(() => { loadItems(); loadNextInvoiceNo(); }, [loadItems, loadNextInvoiceNo]);
 
   const searchResults = productSearch.trim() ? items.filter((it) => { const q = productSearch.toLowerCase(); return it.name.toLowerCase().includes(q) || it.sku.toLowerCase().includes(q) || (it.category || '').toLowerCase().includes(q); }).slice(0, 8) : [];
+  const selectedItem = items.find((it) => String(it.id) === selectedItemId) || null;
 
   function pickItem(item) { setSelectedItemId(String(item.id)); setUnitPrice(String(item.price)); setCustomDesc(''); setProductSearch(''); }
 
@@ -102,13 +126,38 @@ export default function InvoicePage() {
       <div className="card">
         <h2>Add Item to Invoice</h2>
         <div className="row">
-          <div className="field"><label>From inventory</label><select value={selectedItemId} onChange={(e) => { setSelectedItemId(e.target.value); const it = items.find((x) => String(x.id) === e.target.value); if (it) { setUnitPrice(String(it.price)); setCustomDesc(''); } }} style={{ minWidth: 280 }}><option value="">-- choose --</option>{items.map((it) => <option key={it.id} value={it.id}>{it.sku} - {it.name} (stock: {it.quantity})</option>)}</select></div>
+          <div className="field" style={{ position: 'relative' }}>
+            <label>From inventory</label>
+            <button type="button" onClick={() => setDropdownOpen((v) => !v)}
+              style={{ minWidth: 320, width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'white', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+              {selectedItem ? (<><ItemThumb item={selectedItem} /><span>{selectedItem.sku} - {selectedItem.name} (stock: {selectedItem.quantity})</span></>) : <span className="muted">-- choose --</span>}
+              <span style={{ marginLeft: 'auto' }}>▼</span>
+            </button>
+            {dropdownOpen && (
+              <>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 59 }} onClick={() => setDropdownOpen(false)} />
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 60, background: 'white', border: '1px solid var(--border)', borderRadius: 6, maxHeight: 300, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: 4 }}>
+                  <div onClick={() => { setSelectedItemId(''); setDropdownOpen(false); }}
+                    style={{ padding: '8px 12px', cursor: 'pointer', color: '#999' }}>-- choose --</div>
+                  {items.map((it) => (
+                    <div key={it.id} onClick={() => { pickItem(it); setDropdownOpen(false); }}
+                      style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#f7f4ef'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                      <ItemThumb item={it} />
+                      <span>{it.sku} - {it.name} <span className="muted">(stock: {it.quantity})</span></span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <div className="field"><label>or custom</label><input value={customDesc} onChange={(e) => { setCustomDesc(e.target.value); setSelectedItemId(''); }} /></div>
           <div className="field"><label>Qty</label><input type="number" value={qty} onChange={(e) => setQty(e.target.value)} style={{ minWidth: 70 }} /></div>
           <div className="field"><label>Price</label><input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} /></div>
           <button className="btn" onClick={addLine}>+ Add</button>
         </div>
-        <div className="field" style={{ marginTop: 14 }}><label>Search products</label><input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Type to search..." />{searchResults.length > 0 && <div className="search-results">{searchResults.map((it) => <div key={it.id} onClick={() => pickItem(it)}>{it.sku} - {it.name} (stock: {it.quantity})</div>)}</div>}</div>
+        <div className="field" style={{ marginTop: 14 }}><label>Search products</label><input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Type to search..." />{searchResults.length > 0 && <div className="search-results">{searchResults.map((it) => <div key={it.id} onClick={() => pickItem(it)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ItemThumb item={it} /><span>{it.sku} - {it.name} <span className="muted">(stock: {it.quantity})</span></span></div>)}</div>}</div>
       </div>
       <div className="card">
         <table><thead><tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
