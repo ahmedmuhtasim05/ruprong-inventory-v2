@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 function ItemThumb({ item }) {
   const [url, setUrl] = useState(null);
   const [loaded, setLoaded] = useState(!item.has_image);
+  const [hover, setHover] = useState(false);
 
   useEffect(() => {
     if (!item.has_image) return;
@@ -20,7 +21,25 @@ function ItemThumb({ item }) {
   if (!loaded || !url) {
     return <div style={{ width: 28, height: 28, borderRadius: 4, background: '#f4f0ea', flexShrink: 0 }} />;
   }
-  return <img src={url} alt={item.name} style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />;
+  return (
+    <>
+      <img
+        src={url}
+        alt={item.name}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, flexShrink: 0, cursor: 'zoom-in' }}
+      />
+      {hover && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ background: 'white', padding: 12, borderRadius: 8, textAlign: 'center', maxWidth: '80vw' }}>
+            <img src={url} alt={item.name} style={{ maxWidth: '70vw', maxHeight: '62vh', objectFit: 'contain', borderRadius: 6 }} />
+            <p style={{ fontWeight: 600, marginTop: 8, color: '#333' }}>{item.sku} - {item.name}</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 export default function InvoicePage() {
