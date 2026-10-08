@@ -12,3 +12,5 @@ out
 .vercel
 .agents
 skills-lock.json
+
+askpass.ps1

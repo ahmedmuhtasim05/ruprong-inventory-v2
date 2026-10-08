@@ -44,6 +44,7 @@ export default function InventoryPage() {
   const [lightboxImage, setLightboxImage] = useState(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
+  const imageTouchedRef = useRef(false);
 
   const load = useCallback(async (q) => {
     const res = await fetch(`/api/items?search=${encodeURIComponent(q || '')}`);
@@ -90,6 +91,7 @@ export default function InventoryPage() {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Upload failed.'); return; }
+      imageTouchedRef.current = true;
       setForm((prev) => ({ ...prev, image_url: data.url }));
       flash(setSuccess, `Image uploaded and optimized (${data.sizeKB}KB).`);
     } catch {
@@ -123,12 +125,13 @@ export default function InventoryPage() {
   }
 
   function editRow(item) {
+    imageTouchedRef.current = false;
     setForm({ id: item.id, sku: item.sku, name: item.name, category: item.category || '', quantity: String(item.quantity), price: String(item.price), cost_price: item.cost_price == null ? '' : String(item.cost_price), notes: item.notes || '', image_url: '' });
     // Load the stored image on demand so edits keep it (data URL form)
     if (item.has_image) {
       fetch(`/api/items/${item.id}/image?format=data`)
         .then((r) => r.json())
-        .then((d) => setForm((prev) => (prev.id === item.id ? { ...prev, image_url: d.image_url || '' } : prev)))
+        .then((d) => { if (!imageTouchedRef.current) setForm((prev) => (prev.id === item.id ? { ...prev, image_url: d.image_url || '' } : prev)); })
         .catch(() => {});
     }
   }
@@ -212,7 +215,7 @@ export default function InventoryPage() {
                 {form.image_url && (
                   <>
                     <img src={form.image_url} alt="Preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }} onClick={() => setLightboxImage(form.image_url)} />
-                    <button type="button" className="btn btn-sm btn-danger" onClick={() => setForm({ ...form, image_url: '' })}>Remove</button>
+                    <button type="button" className="btn btn-sm btn-danger" onClick={() => { imageTouchedRef.current = true; setForm({ ...form, image_url: '' }); }}>Remove</button>
                   </>
                 )}
               </div>
