@@ -5,12 +5,17 @@ import { nextSerialSku } from '../../../lib/sku';
 const CATEGORIES = ['Ring', 'Necklace', 'Earring', 'Bracelet', 'Bangle', 'Anklet', 'Pendant', 'Chain', 'Set', 'Other'];
 const EMPTY_FORM = { id: null, sku: '', name: '', category: '', quantity: '0', price: '', cost_price: '', notes: '', image_url: '' };
 
-// Days a product has been sitting in inventory since it was inserted
-function agingDays(createdAt) {
-  if (!createdAt) return '—';
-  const created = new Date(createdAt).getTime();
-  if (Number.isNaN(created)) return '—';
-  return Math.max(0, Math.floor((Date.now() - created) / 86400000));
+// Days a product spent (or has been) sitting unsold in inventory.
+// The clock counts from when the product was inserted and STOPS the
+// moment stock reaches zero (sold out), using sold_out_at.
+function agingDays(item) {
+  const startMs = new Date(item.created_at).getTime();
+  if (Number.isNaN(startMs)) return '—';
+  const endMs = item.quantity > 0
+    ? Date.now()
+    : (item.sold_out_at ? new Date(item.sold_out_at).getTime() : Date.now());
+  if (Number.isNaN(endMs)) return '—';
+  return Math.max(0, Math.floor((endMs - startMs) / 86400000));
 }
 
 // Lazy thumbnail: only items flagged has_image trigger a request,
@@ -264,7 +269,7 @@ export default function InventoryPage() {
                 <td>{it.sku}</td><td>{it.name}</td><td>{it.category}</td><td>{it.quantity}</td>
                 <td>{Number(it.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 <td>{it.cost_price != null ? Number(it.cost_price).toLocaleString(undefined, { minimumFractionDigits: 2 }) : ''}</td>
-                <td>{agingDays(it.created_at)}</td>
+                <td>{it.quantity > 0 ? agingDays(it) : <span style={{ color: '#999' }} title="Counting stopped — this product is out of stock">{agingDays(it)}</span>}</td>
                 <td><button className="btn btn-sm" onClick={() => editRow(it)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => deleteRow(it.id)}>Delete</button></td>
               </tr>
             ))}

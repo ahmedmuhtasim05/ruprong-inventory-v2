@@ -44,7 +44,9 @@ export async function POST(request) {
       if (existing.rows.length > 0) {
         // Update existing
         await db.query(
-          'UPDATE items SET name=$1, category=$2, quantity=$3, price=$4, cost_price=$5, notes=$6 WHERE sku=$7',
+          `UPDATE items SET name=$1, category=$2, quantity=$3, price=$4, cost_price=$5, notes=$6, updated_at = NOW(),
+           sold_out_at = CASE WHEN $3 > 0 THEN NULL WHEN quantity > 0 THEN NOW() ELSE sold_out_at END
+           WHERE sku=$7`,
           [name, category || '', parseInt(quantity) || 0, parseFloat(price) || 0, parseFloat(cost_price) || null, notes || '', sku]
         );
         updated++;
@@ -59,7 +61,8 @@ export async function POST(request) {
           if (!finalSku) finalSku = await getNextSerialSku(db);
           try {
             await db.query(
-              'INSERT INTO items (sku, name, category, quantity, price, cost_price, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              `INSERT INTO items (sku, name, category, quantity, price, cost_price, notes, sold_out_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $4 <= 0 THEN NOW() ELSE NULL END)`,
               [finalSku, name, category || '', parseInt(quantity) || 0, parseFloat(price) || 0, parseFloat(cost_price) || null, notes || '']
             );
             inserted++;

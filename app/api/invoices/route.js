@@ -96,10 +96,12 @@ export async function POST(request) {
         [invoice.id, li.item_id, li.description, li.quantity, li.unit_price, li.line_total]
       );
 
-      // Deduct stock
+      // Deduct stock; freeze the aging clock when it sells out
       if (li.item_id) {
         await client.query(
-          'UPDATE items SET quantity = quantity - $1, updated_at = NOW() WHERE id = $2',
+          `UPDATE items SET quantity = quantity - $1, updated_at = NOW(),
+           sold_out_at = CASE WHEN quantity - $1 <= 0 THEN NOW() ELSE NULL END
+           WHERE id = $2`,
           [li.quantity, li.item_id]
         );
       }

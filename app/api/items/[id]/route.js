@@ -8,7 +8,8 @@ export async function PUT(request, { params }) {
     const { sku, name, category, quantity, price, cost_price, notes, image_url } = body;
 
     const result = await db.query(
-      `UPDATE items SET sku=$1, name=$2, category=$3, quantity=$4, price=$5, cost_price=$6, notes=$7, image_url=$8, updated_at=NOW()
+      `UPDATE items SET sku=$1, name=$2, category=$3, quantity=$4, price=$5, cost_price=$6, notes=$7, image_url=$8, updated_at=NOW(),
+       sold_out_at = CASE WHEN $4 > 0 THEN NULL WHEN quantity > 0 THEN NOW() ELSE sold_out_at END
        WHERE id=$9 RETURNING *`,
       [sku, name, category || '', quantity || 0, price || 0, cost_price || null, notes || '', image_url || null, id]
     );

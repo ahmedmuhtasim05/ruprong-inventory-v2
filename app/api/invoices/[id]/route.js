@@ -26,7 +26,7 @@ export async function PUT(request, { params }) {
     const origItems = await client.query('SELECT * FROM invoice_items WHERE invoice_id = $1', [id]);
     for (const item of origItems.rows) {
       if (item.item_id) {
-        await client.query('UPDATE items SET quantity = quantity + $1 WHERE id = $2', [item.quantity, item.item_id]);
+        await client.query('UPDATE items SET quantity = quantity + $1, updated_at = NOW(), sold_out_at = NULL WHERE id = $2', [item.quantity, item.item_id]);
       }
     }
 
@@ -94,7 +94,12 @@ export async function PUT(request, { params }) {
       );
 
       if (li.item_id) {
-        await client.query('UPDATE items SET quantity = quantity - $1, updated_at = NOW() WHERE id = $2', [li.quantity, li.item_id]);
+        await client.query(
+          `UPDATE items SET quantity = quantity - $1, updated_at = NOW(),
+           sold_out_at = CASE WHEN quantity - $1 <= 0 THEN NOW() ELSE NULL END
+           WHERE id = $2`,
+          [li.quantity, li.item_id]
+        );
       }
     }
 
@@ -119,7 +124,7 @@ export async function DELETE(request, { params }) {
     const items = await client.query('SELECT * FROM invoice_items WHERE invoice_id = $1', [id]);
     for (const item of items.rows) {
       if (item.item_id) {
-        await client.query('UPDATE items SET quantity = quantity + $1, updated_at = NOW() WHERE id = $2', [item.quantity, item.item_id]);
+        await client.query('UPDATE items SET quantity = quantity + $1, updated_at = NOW(), sold_out_at = NULL WHERE id = $2', [item.quantity, item.item_id]);
       }
     }
 
