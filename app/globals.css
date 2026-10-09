@@ -140,7 +140,7 @@ body {
 @media (min-width: 769px) {
   .add-item-card {
     position: sticky;
-    top: 60px;
+    top: var(--nav-h, 60px);
     z-index: 40;
   }
 }
@@ -625,6 +625,24 @@ tr.low-stock {
 
   .stat-card {
     padding: 12px;
+  }
+
+  /* Inventory table (inventory tab only): pin the table
+     in a box right below the navbar. The column header
+     sticks at the top of the box while the table scrolls
+     inside it, so headings stay fixed under the navbar
+     on phones instead of floating mid-screen. */
+  .table-wrap-sticky {
+    position: sticky;
+    top: var(--nav-h, 56px);
+    max-height: calc(100vh - var(--nav-h, 56px));
+    max-height: calc(100dvh - var(--nav-h, 56px));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 30;
+    background: var(--card-bg);
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   }
 }
 

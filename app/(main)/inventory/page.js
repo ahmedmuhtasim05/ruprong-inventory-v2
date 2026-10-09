@@ -61,15 +61,49 @@ export default function InventoryPage() {
 
   useEffect(() => { load(search); }, [search, load]);
 
-  // The column header row sticks directly under the Add Item card;
-  // everything else scrolls normally (and passes behind the sticky card).
+  // Column header sticky behavior:
+  // - Desktop/laptop: the header sticks directly under the
+  //   sticky Add Item card (nav height + card height).
+  // - Mobile: the table sits in a box pinned below the
+  //   navbar (see .table-wrap-sticky in globals.css), so
+  //   the header sticks at the top of that box (offset 0)
+  //   and stays fixed under the navbar while scrolling.
   const addCardRef = useRef(null);
-  const [theadTop, setTheadTop] = useState(300);
+  const [navH, setNavH] = useState(60);
+  const [addH, setAddH] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Measure the navbar once and expose it as --nav-h so
+  // CSS can pin elements exactly below it.
+  useEffect(() => {
+    function measureNav() {
+      const nav = document.querySelector('.nav');
+      const h = nav ? nav.offsetHeight : 60;
+      setNavH(h);
+      document.documentElement.style.setProperty('--nav-h', `${h}px`);
+    }
+    measureNav();
+    window.addEventListener('resize', measureNav);
+    return () => window.removeEventListener('resize', measureNav);
+  }, []);
+
+  // Track the viewport class so the header offset switches
+  // between the two layouts.
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    if (mq.addEventListener) mq.addEventListener('change', update);
+    else mq.addListener(update);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', update);
+      else mq.removeListener(update);
+    };
+  }, []);
 
   useEffect(() => {
     function update() {
-      const addH = addCardRef.current ? addCardRef.current.offsetHeight : 0;
-      setTheadTop(60 + addH);
+      setAddH(addCardRef.current ? addCardRef.current.offsetHeight : 0);
     }
     update();
     window.addEventListener('resize', update);
@@ -81,6 +115,7 @@ export default function InventoryPage() {
     return () => { window.removeEventListener('resize', update); if (ro) ro.disconnect(); };
   }, []);
 
+  const theadTop = isMobile ? 0 : navH + addH;
   const thStyle = { position: 'sticky', top: theadTop, zIndex: 30, background: 'var(--card-bg)' };
 
   function flash(setter, msg) {
