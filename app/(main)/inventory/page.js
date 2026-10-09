@@ -162,12 +162,23 @@ export default function InventoryPage() {
         const ths = wrap.querySelectorAll('thead th');
         const next = {
           top: pin,
+          // Anchor the clone to the wrapper's own
+          // position and width so it fits inside the
+          // content grid on desktop/laptop instead of
+          // spanning the full viewport. The wrapper's
+          // box does not move when the table scrolls
+          // sideways inside it, so this stays stable.
+          x: Math.round(rect.left),
           width: table ? table.offsetWidth : 0,
           colWidths: Array.from(ths).map((th) => th.offsetWidth),
-          left: wrap.scrollLeft,
+          scrollLeft: wrap.scrollLeft,
         };
         setStickyHead((s) =>
-          s && s.top === next.top && s.width === next.width && s.left === next.left
+          s &&
+          s.top === next.top &&
+          s.x === next.x &&
+          s.width === next.width &&
+          s.scrollLeft === next.scrollLeft
             ? s
             : next
         );
@@ -412,10 +423,13 @@ export default function InventoryPage() {
           copy of the header row that stays under the
           navbar while the table scrolls. */}
       {stickyHead && (
-        <div className="sticky-thead" style={{ top: stickyHead.top }}>
+        <div
+          className="sticky-thead"
+          style={{ top: stickyHead.top, left: stickyHead.x, width: stickyHead.width }}
+        >
           <div
             className="sticky-thead-inner"
-            style={{ width: stickyHead.width, transform: `translateX(${-stickyHead.left}px)` }}
+            style={{ width: stickyHead.width, transform: `translateX(${-stickyHead.scrollLeft}px)` }}
           >
             <table>
               <colgroup>

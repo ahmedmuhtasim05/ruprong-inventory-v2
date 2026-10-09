@@ -274,16 +274,17 @@ tr.low-stock {
   width: 100%;
 }
 
-/* Pinned column-header clone for the inventory table on
-   phones/tablets. The real table scrolls sideways inside
-   its wrapper (which blocks page-level sticky), so this
-   fixed copy of the header row stays under the navbar
-   instead. Column widths and the horizontal offset are
-   synced from the real table at runtime. */
+/* Pinned column-header clone for the inventory table.
+   The real table scrolls sideways inside its wrapper
+   (which blocks page-level sticky), so this fixed copy
+   of the header row stays on the pin line instead. It
+   is anchored to the wrapper's measured position and
+   width (inline left/width), so it fits inside the
+   content grid on desktop/laptop rather than spanning
+   the full viewport. Column widths and the horizontal
+   offset are synced from the real table at runtime. */
 .sticky-thead {
   position: fixed;
-  left: 0;
-  right: 0;
   z-index: 35;
   overflow: hidden;
   pointer-events: none;
