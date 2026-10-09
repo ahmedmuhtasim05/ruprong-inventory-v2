@@ -268,9 +268,41 @@ tr.low-stock {
 
 /* Same idea for tables whose header row sticks to the page
    (inventory). The scroll only activates on small screens so
-   desktop keeps the sticky header behavior. */
+   desktop keeps the sticky header behavior; on phones and
+   tablets the pinned .sticky-thead clone takes over. */
 .table-wrap-sticky {
   width: 100%;
+}
+
+/* Pinned column-header clone for the inventory table on
+   phones/tablets. The real table scrolls sideways inside
+   its wrapper (which blocks page-level sticky), so this
+   fixed copy of the header row stays under the navbar
+   instead. Column widths and the horizontal offset are
+   synced from the real table at runtime. */
+.sticky-thead {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 35;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--card-bg);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.sticky-thead-inner {
+  will-change: transform;
+}
+
+.sticky-thead table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.sticky-thead th {
+  position: static;
+  background: var(--card-bg);
 }
 
 /* Modal overlay (history invoice editor) */
@@ -625,24 +657,6 @@ tr.low-stock {
 
   .stat-card {
     padding: 12px;
-  }
-
-  /* Inventory table (inventory tab only): pin the table
-     in a box right below the navbar. The column header
-     sticks at the top of the box while the table scrolls
-     inside it, so headings stay fixed under the navbar
-     on phones instead of floating mid-screen. */
-  .table-wrap-sticky {
-    position: sticky;
-    top: var(--nav-h, 56px);
-    max-height: calc(100vh - var(--nav-h, 56px));
-    max-height: calc(100dvh - var(--nav-h, 56px));
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    z-index: 30;
-    background: var(--card-bg);
-    border-radius: 6px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   }
 }
 

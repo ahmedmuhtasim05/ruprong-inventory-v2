@@ -64,14 +64,19 @@ export default function InventoryPage() {
   // Column header sticky behavior:
   // - Desktop/laptop: the header sticks directly under the
   //   sticky Add Item card (nav height + card height).
-  // - Mobile: the table sits in a box pinned below the
-  //   navbar (see .table-wrap-sticky in globals.css), so
-  //   the header sticks at the top of that box (offset 0)
-  //   and stays fixed under the navbar while scrolling.
+  // - Phones/tablets: the table scrolls sideways inside
+  //   its wrapper, which blocks page-level sticky. A fixed
+  //   clone of the header row pins under the navbar instead
+  //   (stickyHead below + .sticky-thead in globals.css),
+  //   while the add-item and search cards scroll away
+  //   normally with the rest of the page.
   const addCardRef = useRef(null);
+  const tableWrapRef = useRef(null);
   const [navH, setNavH] = useState(60);
   const [addH, setAddH] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  // { top, width, colWidths, left } while the pinned
+  // header is visible; null otherwise.
+  const [stickyHead, setStickyHead] = useState(null);
 
   // Measure the navbar once and expose it as --nav-h so
   // CSS can pin elements exactly below it.
@@ -85,20 +90,6 @@ export default function InventoryPage() {
     measureNav();
     window.addEventListener('resize', measureNav);
     return () => window.removeEventListener('resize', measureNav);
-  }, []);
-
-  // Track the viewport class so the header offset switches
-  // between the two layouts.
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px)');
-    const update = () => setIsMobile(mq.matches);
-    update();
-    if (mq.addEventListener) mq.addEventListener('change', update);
-    else mq.addListener(update);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', update);
-      else mq.removeListener(update);
-    };
   }, []);
 
   useEffect(() => {
@@ -115,8 +106,63 @@ export default function InventoryPage() {
     return () => { window.removeEventListener('resize', update); if (ro) ro.disconnect(); };
   }, []);
 
-  const theadTop = isMobile ? 0 : navH + addH;
-  const thStyle = { position: 'sticky', top: theadTop, zIndex: 30, background: 'var(--card-bg)' };
+  const thStyle = { position: 'sticky', top: navH + addH, zIndex: 30, background: 'var(--card-bg)' };
+
+  // Pinned header for phones/tablets: while the table's
+  // own header row is scrolled under the navbar, show a
+  // fixed clone that stays under it. Column widths and
+  // the horizontal offset are synced to the real table
+  // so the clone lines up exactly.
+  useEffect(() => {
+    const wrap = tableWrapRef.current;
+    if (!wrap) return;
+    let raf = 0;
+
+    function update() {
+      raf = 0;
+      const nav = document.querySelector('.nav');
+      const nh = nav ? nav.offsetHeight : 60;
+      const rect = wrap.getBoundingClientRect();
+      // Only needed where the wrapper actually scrolls
+      // sideways; on desktop the real header sticks to
+      // the page on its own.
+      const scrollable = wrap.scrollWidth > wrap.clientWidth + 1;
+      // Take over once the real header scrolls under the
+      // navbar; drop when the table's bottom passes it.
+      if (scrollable && rect.top < nh && rect.bottom > nh) {
+        const table = wrap.querySelector('table');
+        const ths = wrap.querySelectorAll('thead th');
+        const next = {
+          top: nh,
+          width: table ? table.offsetWidth : 0,
+          colWidths: Array.from(ths).map((th) => th.offsetWidth),
+          left: wrap.scrollLeft,
+        };
+        setStickyHead((s) =>
+          s && s.top === next.top && s.width === next.width && s.left === next.left
+            ? s
+            : next
+        );
+      } else {
+        setStickyHead((s) => (s ? null : s));
+      }
+    }
+
+    function onScroll() {
+      if (!raf) raf = requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    wrap.addEventListener('scroll', onScroll, { passive: true });
+    update();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      wrap.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [items]);
 
   function flash(setter, msg) {
     setter(msg);
@@ -230,6 +276,23 @@ export default function InventoryPage() {
   const totalUnits = items.reduce((s, it) => s + it.quantity, 0);
   const nextSku = nextSerialSku(items.map((it) => it.sku));
 
+  // Header cells are shared by the real table and the
+  // pinned mobile clone so both render identically.
+  const headerCells = (style) => (
+    <>
+      <th style={style}></th>
+      <th style={style}>Image</th>
+      <th style={style}>SKU</th>
+      <th style={style}>Name</th>
+      <th style={style}>Category</th>
+      <th style={style}>Qty</th>
+      <th style={style}>Price</th>
+      <th style={style}>Cost</th>
+      <th style={style}>Aging Days</th>
+      <th style={style}></th>
+    </>
+  );
+
   return (
     <div>
       <h2 style={{ color: 'var(--primary)' }}>Inventory</h2>
@@ -296,9 +359,9 @@ export default function InventoryPage() {
       </div>
 
       <div className="card">
-        <div className="table-wrap-sticky">
+        <div className="table-wrap-sticky" ref={tableWrapRef}>
           <table>
-            <thead><tr><th style={thStyle}></th><th style={thStyle}>Image</th><th style={thStyle}>SKU</th><th style={thStyle}>Name</th><th style={thStyle}>Category</th><th style={thStyle}>Qty</th><th style={thStyle}>Price</th><th style={thStyle}>Cost</th><th style={thStyle}>Aging Days</th><th style={thStyle}></th></tr></thead>
+            <thead><tr>{headerCells(thStyle)}</tr></thead>
             <tbody>
               {items.map((it) => (
                 <tr key={it.id} className={it.quantity <= 3 ? 'low-stock' : ''}>
@@ -316,6 +379,25 @@ export default function InventoryPage() {
           </table>
         </div>
       </div>
+
+      {/* Pinned column header (phones/tablets): fixed
+          copy of the header row that stays under the
+          navbar while the table scrolls. */}
+      {stickyHead && (
+        <div className="sticky-thead" style={{ top: stickyHead.top }}>
+          <div
+            className="sticky-thead-inner"
+            style={{ width: stickyHead.width, transform: `translateX(${-stickyHead.left}px)` }}
+          >
+            <table>
+              <colgroup>
+                {stickyHead.colWidths.map((w, i) => <col key={i} style={{ width: w }} />)}
+              </colgroup>
+              <thead><tr>{headerCells({ background: 'var(--card-bg)' })}</tr></thead>
+            </table>
+          </div>
+        </div>
+      )}
 
       {lightboxImage && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }} onClick={() => setLightboxImage(null)}>
