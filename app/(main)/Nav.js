@@ -16,6 +16,7 @@ export default function Nav() {
   const router = useRouter();
   const [permissions, setPermissions] = useState(null); // null = still loading
   const [isSuper, setIsSuper] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -43,14 +44,18 @@ export default function Nav() {
 
   return (
     <nav className="nav">
-      <span style={{ fontWeight: 700, color: 'var(--primary)', marginRight: 16 }}>RupRong</span>
-      {visibleTabs.map((t) => (
-        <Link key={t.href} href={t.href} className={pathname.startsWith(t.href) ? 'active' : ''}>
-          {t.label}
-        </Link>
-      ))}
-      <span className="spacer" />
-      <span className="logout" onClick={logout}>Log Out</span>
+      <span className="nav-brand">RupRong</span>
+      <div className={`nav-tabs${menuOpen ? ' open' : ''}`}>
+        {visibleTabs.map((t) => (
+          <Link key={t.href} href={t.href} className={pathname.startsWith(t.href) ? 'active' : ''} onClick={() => setMenuOpen(false)}>
+            {t.label}
+          </Link>
+        ))}
+        <span className="logout" onClick={() => { setMenuOpen(false); logout(); }}>Log Out</span>
+      </div>
+      <button type="button" className="nav-toggle" aria-label="Toggle menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+        {menuOpen ? '✕' : '☰'}
+      </button>
     </nav>
   );
 }

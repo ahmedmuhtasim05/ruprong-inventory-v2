@@ -143,7 +143,7 @@ export default function InvoicePage() {
           <div className="field" style={{ position: 'relative' }}>
             <label>From inventory</label>
             <button type="button" onClick={() => setDropdownOpen((v) => !v)}
-              style={{ minWidth: 320, width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'white', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
+              style={{ minWidth: 0, width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'white', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
               {selectedItem ? (<><ItemThumb item={selectedItem} /><span>{selectedItem.sku} - {selectedItem.name} (stock: {selectedItem.quantity})</span></>) : <span className="muted">-- choose --</span>}
               <span style={{ marginLeft: 'auto' }}>▼</span>
             </button>
@@ -174,9 +174,11 @@ export default function InvoicePage() {
         <div className="field" style={{ marginTop: 14 }}><label>Search products</label><input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Type to search..." />{searchResults.length > 0 && <div className="search-results">{searchResults.map((it) => <div key={it.id} onClick={() => pickItem(it)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ItemThumb item={it} /><span>{it.sku} - {it.name} <span className="muted">(stock: {it.quantity})</span></span></div>)}</div>}</div>
       </div>
       <div className="card">
-        <table><thead><tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
-          <tbody>{lineItems.map((li, i) => <tr key={i}><td>{li.description}</td><td>{li.quantity}</td><td>{li.unit_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td>{li.line_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td><button className="btn btn-sm btn-danger" onClick={() => removeLine(i)}>Remove</button></td></tr>)}{lineItems.length === 0 && <tr><td colSpan={5} className="muted" style={{ textAlign: 'center', padding: 16 }}>No items yet.</td></tr>}</tbody>
-        </table>
+        <div className="table-wrap">
+          <table><thead><tr><th>Description</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
+            <tbody>{lineItems.map((li, i) => <tr key={i}><td>{li.description}</td><td>{li.quantity}</td><td>{li.unit_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td>{li.line_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td><button className="btn btn-sm btn-danger" onClick={() => removeLine(i)}>Remove</button></td></tr>)}{lineItems.length === 0 && <tr><td colSpan={5} className="muted" style={{ textAlign: 'center', padding: 16 }}>No items yet.</td></tr>}</tbody>
+          </table>
+        </div>
         <div className="row" style={{ justifyContent: 'space-between', marginTop: 16, alignItems: 'flex-end' }}>
           <div className="row">
             <div className="field"><label>Discount</label><div className="row" style={{ gap: 6 }}><input type="number" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} style={{ minWidth: 90 }} /><select value={discountType} onChange={(e) => setDiscountType(e.target.value)}><option value="flat">Flat</option><option value="percent">%</option></select></div></div>

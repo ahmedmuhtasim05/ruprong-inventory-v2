@@ -44,6 +44,20 @@ body {
   z-index: 50;
 }
 
+.nav-brand {
+  font-weight: 700;
+  color: var(--primary);
+  margin-right: 16px;
+  white-space: nowrap;
+}
+
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
 .nav a {
   padding: 8px 16px;
   border-radius: 6px;
@@ -52,6 +66,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .nav a:hover {
@@ -63,21 +78,33 @@ body {
   color: white;
 }
 
-.nav .spacer {
-  flex: 1;
-}
-
 .nav .logout {
+  margin-left: auto;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   color: var(--danger);
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .nav .logout:hover {
   background: #fff0f0;
+}
+
+/* Hamburger toggle — hidden on desktop, shown on small screens */
+.nav-toggle {
+  display: none;
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text);
 }
 
 /* Page */
@@ -200,6 +227,7 @@ th {
 td {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
+  overflow-wrap: break-word;
 }
 
 tr:hover {
@@ -208,6 +236,47 @@ tr:hover {
 
 tr.low-stock {
   background: #fff8f0;
+}
+
+/* Horizontal scroll wrapper for wide tables (invoice lines,
+   history, reports, settings). Keeps the page itself narrow
+   while letting the table scroll sideways on small screens. */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap table {
+  min-width: 100%;
+}
+
+/* Same idea for tables whose header row sticks to the page
+   (inventory). The scroll only activates on small screens so
+   desktop keeps the sticky header behavior. */
+.table-wrap-sticky {
+  width: 100%;
+}
+
+/* Modal overlay (history invoice editor) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  overflow-y: auto;
+  padding: 40px;
+}
+
+.modal-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
 }
 
 /* Messages */
@@ -384,19 +453,142 @@ tr.low-stock {
 }
 
 /* Responsive */
+@media (max-width: 900px) {
+  .table-wrap-sticky {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 @media (max-width: 768px) {
   .page {
+    padding: 16px 12px;
+  }
+
+  .card {
     padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .card h2 {
+    font-size: 16px;
   }
 
   .nav {
-    padding: 8px 16px;
-    overflow-x: auto;
+    padding: 8px 12px;
+  }
+
+  .nav-brand {
+    margin-right: 0;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-tabs {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.10);
+    padding: 8px 12px 12px;
+  }
+
+  .nav-tabs.open {
+    display: flex;
+  }
+
+  .nav-tabs a,
+  .nav-tabs .logout {
+    display: block;
+    padding: 12px 10px;
+    text-align: left;
+  }
+
+  .nav-tabs .logout {
+    margin-left: 0;
   }
 
   .row {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .row > .btn,
+  .row > button,
+  .row > a.btn {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  table {
+    font-size: 13px;
+  }
+
+  th, td {
+    padding: 8px;
+  }
+
+  /* 16px inputs stop iOS Safari from auto-zooming on focus */
+  .field input,
+  .field select,
+  .login-box input {
+    font-size: 16px;
+  }
+
+  .total-box {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .color-picker-wrapper {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-card {
+    padding: 16px;
+  }
+
+  .login-wrap {
+    padding: 16px;
+  }
+
+  .login-box {
+    padding: 24px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .stat-card .value {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px 8px;
+  }
+
+  .card {
+    padding: 14px;
   }
 
   table {
@@ -404,7 +596,20 @@ tr.low-stock {
   }
 
   th, td {
-    padding: 6px 8px;
+    padding: 6px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .btn-sm {
+    padding: 4px 8px;
+  }
+
+  .stat-card {
+    padding: 12px;
   }
 }
 

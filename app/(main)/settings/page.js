@@ -204,9 +204,11 @@ export default function SettingsPage() {
         <h2>User Management</h2>
         {userError && <div className="msg msg-error">{userError}</div>}
         {userMsg && <div className="msg msg-success">{userMsg}</div>}
-        <table style={{ marginTop: 12 }}><thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Created</th><th></th></tr></thead>
-          <tbody>{users.map((u) => <tr key={u.id}><td>{u.id}</td><td>{editingUser === u.id ? <input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} style={{ width: 120, padding: '4px 8px' }} /> : u.username}</td><td>{editingUser === u.id ? <select value={editRoleId} onChange={(e) => setEditRoleId(e.target.value)} disabled={!me?.is_super}><option value="">No role</option>{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select> : (u.role_name || '—')}</td><td>{u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '—'}</td><td>{editingUser === u.id ? <><input type="password" placeholder="New password (blank = keep)" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} style={{ width: 160, padding: '4px 8px', marginRight: 6 }} /><button className="btn btn-sm btn-primary" onClick={handleUpdateUser}>Save</button> <button className="btn btn-sm" onClick={() => setEditingUser(null)}>Cancel</button></> : <><button className="btn btn-sm" onClick={() => startEdit(u)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => handleDeleteUser(u)}>Delete</button></>}</td></tr>)}</tbody>
-        </table>
+        <div className="table-wrap">
+          <table style={{ marginTop: 12 }}><thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Created</th><th></th></tr></thead>
+            <tbody>{users.map((u) => <tr key={u.id}><td>{u.id}</td><td>{editingUser === u.id ? <input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} style={{ width: 120, padding: '4px 8px' }} /> : u.username}</td><td>{editingUser === u.id ? <select value={editRoleId} onChange={(e) => setEditRoleId(e.target.value)} disabled={!me?.is_super}><option value="">No role</option>{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select> : (u.role_name || '—')}</td><td>{u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '—'}</td><td>{editingUser === u.id ? <><input type="password" placeholder="New password (blank = keep)" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} style={{ width: 160, padding: '4px 8px', marginRight: 6 }} /><button className="btn btn-sm btn-primary" onClick={handleUpdateUser}>Save</button> <button className="btn btn-sm" onClick={() => setEditingUser(null)}>Cancel</button></> : <><button className="btn btn-sm" onClick={() => startEdit(u)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => handleDeleteUser(u)}>Delete</button></>}</td></tr>)}</tbody>
+          </table>
+        </div>
         <form onSubmit={handleCreateUser} style={{ marginTop: 16 }}>
           <h3 style={{ fontSize: 14, color: 'var(--primary)' }}>Create New User</h3>
           <div className="row">
@@ -225,35 +227,37 @@ export default function SettingsPage() {
           <p className="muted">Create roles and toggle which tabs each role can see. The Superadmin role always has full access and cannot be changed.</p>
           {roleError && <div className="msg msg-error">{roleError}</div>}
           {roleMsg && <div className="msg msg-success">{roleMsg}</div>}
-          <table style={{ marginTop: 12 }}>
-            <thead>
-              <tr>
-                <th>Role</th>
-                {PERMISSION_TABS.map((t) => <th key={t.key}>{t.label}</th>)}
-                <th>Users</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((role) => (
-                <tr key={role.id}>
-                  <td>{role.name}{role.is_super ? ' ⭐' : ''}</td>
-                  {PERMISSION_TABS.map((t) => (
-                    <td key={t.key}>
-                      <Toggle
-                        checked={role.permissions.includes(t.key)}
-                        disabled={role.is_super}
-                        onChange={(on) => toggleRolePermission(role, t.key, on)}
-                      />
-                    </td>
-                  ))}
-                  <td>{role.user_count}</td>
-                  <td>{!role.is_super && <button className="btn btn-sm btn-danger" onClick={() => handleDeleteRole(role)}>Delete</button>}</td>
+          <div className="table-wrap">
+            <table style={{ marginTop: 12 }}>
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  {PERMISSION_TABS.map((t) => <th key={t.key}>{t.label}</th>)}
+                  <th>Users</th>
+                  <th></th>
                 </tr>
-              ))}
-              {roles.length === 0 && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 12 }}>No roles yet.</td></tr>}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {roles.map((role) => (
+                  <tr key={role.id}>
+                    <td>{role.name}{role.is_super ? ' ⭐' : ''}</td>
+                    {PERMISSION_TABS.map((t) => (
+                      <td key={t.key}>
+                        <Toggle
+                          checked={role.permissions.includes(t.key)}
+                          disabled={role.is_super}
+                          onChange={(on) => toggleRolePermission(role, t.key, on)}
+                        />
+                      </td>
+                    ))}
+                    <td>{role.user_count}</td>
+                    <td>{!role.is_super && <button className="btn btn-sm btn-danger" onClick={() => handleDeleteRole(role)}>Delete</button>}</td>
+                  </tr>
+                ))}
+                {roles.length === 0 && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 12 }}>No roles yet.</td></tr>}
+              </tbody>
+            </table>
+          </div>
           <form onSubmit={handleCreateRole} style={{ marginTop: 16 }}>
             <h3 style={{ fontSize: 14, color: 'var(--primary)' }}>Create New Role</h3>
             <div className="row" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: 10 }}>

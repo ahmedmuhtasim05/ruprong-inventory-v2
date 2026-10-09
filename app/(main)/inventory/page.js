@@ -261,23 +261,25 @@ export default function InventoryPage() {
       </div>
 
       <div className="card">
-        <table>
-          <thead><tr><th style={thStyle}></th><th style={thStyle}>Image</th><th style={thStyle}>SKU</th><th style={thStyle}>Name</th><th style={thStyle}>Category</th><th style={thStyle}>Qty</th><th style={thStyle}>Price</th><th style={thStyle}>Cost</th><th style={thStyle}>Aging Days</th><th style={thStyle}></th></tr></thead>
-          <tbody>
-            {items.map((it) => (
-              <tr key={it.id} className={it.quantity <= 3 ? 'low-stock' : ''}>
-                <td><input type="checkbox" checked={selected.has(it.id)} onChange={() => toggleSelect(it.id)} /></td>
-                <td><ItemThumb item={it} onOpen={setLightboxImage} /></td>
-                <td>{it.sku}</td><td>{it.name}</td><td>{it.category}</td><td>{it.quantity}</td>
-                <td>{Number(it.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                <td>{it.cost_price != null ? Number(it.cost_price).toLocaleString(undefined, { minimumFractionDigits: 2 }) : ''}</td>
-                <td>{it.quantity > 0 ? agingDays(it) : <span style={{ color: '#999' }} title="Counting stopped — this product is out of stock">{agingDays(it)}</span>}</td>
-                <td><button className="btn btn-sm" onClick={() => editRow(it)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => deleteRow(it.id)}>Delete</button></td>
-              </tr>
-            ))}
-            {items.length === 0 && <tr><td colSpan={10} className="muted" style={{ padding: 20, textAlign: 'center' }}>No items yet.</td></tr>}
-          </tbody>
-        </table>
+        <div className="table-wrap-sticky">
+          <table>
+            <thead><tr><th style={thStyle}></th><th style={thStyle}>Image</th><th style={thStyle}>SKU</th><th style={thStyle}>Name</th><th style={thStyle}>Category</th><th style={thStyle}>Qty</th><th style={thStyle}>Price</th><th style={thStyle}>Cost</th><th style={thStyle}>Aging Days</th><th style={thStyle}></th></tr></thead>
+            <tbody>
+              {items.map((it) => (
+                <tr key={it.id} className={it.quantity <= 3 ? 'low-stock' : ''}>
+                  <td><input type="checkbox" checked={selected.has(it.id)} onChange={() => toggleSelect(it.id)} /></td>
+                  <td><ItemThumb item={it} onOpen={setLightboxImage} /></td>
+                  <td>{it.sku}</td><td>{it.name}</td><td>{it.category}</td><td>{it.quantity}</td>
+                  <td>{Number(it.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td>{it.cost_price != null ? Number(it.cost_price).toLocaleString(undefined, { minimumFractionDigits: 2 }) : ''}</td>
+                  <td>{it.quantity > 0 ? agingDays(it) : <span style={{ color: '#999' }} title="Counting stopped — this product is out of stock">{agingDays(it)}</span>}</td>
+                  <td><button className="btn btn-sm" onClick={() => editRow(it)}>Edit</button> <button className="btn btn-sm btn-danger" onClick={() => deleteRow(it.id)}>Delete</button></td>
+                </tr>
+              ))}
+              {items.length === 0 && <tr><td colSpan={10} className="muted" style={{ padding: 20, textAlign: 'center' }}>No items yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {lightboxImage && (
