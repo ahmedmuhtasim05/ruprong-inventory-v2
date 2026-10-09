@@ -61,19 +61,24 @@ export default function InventoryPage() {
 
   useEffect(() => { load(search); }, [search, load]);
 
-  // Column header sticky behavior:
-  // - Desktop/laptop: the header sticks directly under the
-  //   sticky Add Item card (nav height + card height).
-  // - Phones/tablets: the table scrolls sideways inside
-  //   its wrapper, which blocks page-level sticky. A fixed
-  //   clone of the header row pins under the navbar instead
-  //   (stickyHead below + .sticky-thead in globals.css),
-  //   while the add-item and search cards scroll away
-  //   normally with the rest of the page.
+  // Sticky column header, one mechanism for every screen:
+  // the real header row scrolls away with the table, and
+  // a fixed clone of it (.sticky-thead in globals.css)
+  // pins under the navbar on phones — or under the pinned
+  // Add Item card on desktop/laptop (>=769px, where that
+  // card sticks). Column widths and the horizontal offset
+  // are synced to the real table so the clone lines up.
+  // The real th stays static on purpose: a page-level
+  // sticky th would stick mid-list on tablets and narrow
+  // desktop windows, where the table's horizontal-scroll
+  // wrapper is not active.
   const addCardRef = useRef(null);
   const tableWrapRef = useRef(null);
   const [navH, setNavH] = useState(60);
   const [addH, setAddH] = useState(0);
+  // True at >=769px, where the Add Item card pins under
+  // the navbar — the header then pins below it.
+  const [desktopLayout, setDesktopLayout] = useState(false);
   // { top, width, colWidths, left } while the pinned
   // header is visible; null otherwise.
   const [stickyHead, setStickyHead] = useState(null);
@@ -92,6 +97,22 @@ export default function InventoryPage() {
     return () => window.removeEventListener('resize', measureNav);
   }, []);
 
+  // Track the layout class: >=769px the Add Item
+  // card is sticky (see .add-item-card in
+  // globals.css), so the pinned header sits below
+  // it instead of directly under the navbar.
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 769px)');
+    const update = () => setDesktopLayout(mq.matches);
+    update();
+    if (mq.addEventListener) mq.addEventListener('change', update);
+    else mq.addListener(update);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', update);
+      else mq.removeListener(update);
+    };
+  }, []);
+
   useEffect(() => {
     function update() {
       setAddH(addCardRef.current ? addCardRef.current.offsetHeight : 0);
@@ -106,12 +127,17 @@ export default function InventoryPage() {
     return () => { window.removeEventListener('resize', update); if (ro) ro.disconnect(); };
   }, []);
 
-  const thStyle = { position: 'sticky', top: navH + addH, zIndex: 30, background: 'var(--card-bg)' };
+  // The real header stays static — the fixed clone
+  // below is the only pinned header, on every
+  // screen size.
+  const thStyle = { background: 'var(--card-bg)' };
 
-  // Pinned header for phones/tablets: while the table's
-  // own header row is scrolled under the navbar, show a
-  // fixed clone that stays under it. Column widths and
-  // the horizontal offset are synced to the real table
+  // Pinned header clone: while the table's own
+  // header row is scrolled past the pin line (the
+  // navbar on phones, or the navbar + pinned Add
+  // Item card on desktop), show a fixed clone that
+  // stays on that line. Column widths and the
+  // horizontal offset are synced to the real table
   // so the clone lines up exactly.
   useEffect(() => {
     const wrap = tableWrapRef.current;
@@ -122,18 +148,20 @@ export default function InventoryPage() {
       raf = 0;
       const nav = document.querySelector('.nav');
       const nh = nav ? nav.offsetHeight : 60;
+      const pin = desktopLayout
+        ? nh + (addCardRef.current ? addCardRef.current.offsetHeight : 0)
+        : nh;
       const rect = wrap.getBoundingClientRect();
-      // Only needed where the wrapper actually scrolls
-      // sideways; on desktop the real header sticks to
-      // the page on its own.
-      const scrollable = wrap.scrollWidth > wrap.clientWidth + 1;
-      // Take over once the real header scrolls under the
-      // navbar; drop when the table's bottom passes it.
-      if (scrollable && rect.top < nh && rect.bottom > nh) {
+      const head = wrap.querySelector('thead');
+      const headTop = head ? head.getBoundingClientRect().top : rect.top;
+      // Take over once the real header scrolls past
+      // the pin line; drop when the table's bottom
+      // passes it.
+      if (headTop < pin && rect.bottom > pin) {
         const table = wrap.querySelector('table');
         const ths = wrap.querySelectorAll('thead th');
         const next = {
-          top: nh,
+          top: pin,
           width: table ? table.offsetWidth : 0,
           colWidths: Array.from(ths).map((th) => th.offsetWidth),
           left: wrap.scrollLeft,
@@ -162,7 +190,7 @@ export default function InventoryPage() {
       wrap.removeEventListener('scroll', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [items]);
+  }, [desktopLayout, addH, items]);
 
   function flash(setter, msg) {
     setter(msg);
