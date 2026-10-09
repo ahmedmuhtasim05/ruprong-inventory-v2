@@ -130,6 +130,21 @@ body {
   color: var(--primary);
 }
 
+/* Add Item card: sticks under the nav on desktop/laptop
+   only. On mobile it scrolls away normally so the whole
+   screen isn't taken up by a fixed form. */
+.add-item-card {
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+}
+
+@media (min-width: 769px) {
+  .add-item-card {
+    position: sticky;
+    top: 60px;
+    z-index: 40;
+  }
+}
+
 /* Forms */
 .field {
   display: flex;

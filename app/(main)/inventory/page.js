@@ -201,7 +201,7 @@ export default function InventoryPage() {
       {error && <div className="msg msg-error">{error}</div>}
       {success && <div className="msg msg-success">{success}</div>}
 
-      <div className="card" ref={addCardRef} style={{ position: 'sticky', top: 60, zIndex: 40, boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
+      <div className="card add-item-card" ref={addCardRef}>
         <h2>{form.id ? 'Edit Item' : 'Add Item'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="row">
