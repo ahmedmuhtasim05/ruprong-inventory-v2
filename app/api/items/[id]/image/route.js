@@ -4,10 +4,11 @@ import crypto from 'crypto';
 
 // Product image delivery.
 //   default        -> raw image bytes (image/*), cacheable, ETag-aware
-//   ?format=data   -> JSON { image_url: dataURL } (needed when saving edits)
+//   ?format=data   -> JSON { image_url: dataURL }
 // List endpoints intentionally exclude the heavy base64 column; clients load
 // thumbnails directly from this route so listing pages stay fast even with
-// hundreds of product photos.
+// hundreds of product photos. Thumbnails carry a ?v=updated_at cache-buster
+// so a replaced photo is visible immediately.
 export async function GET(request, { params }) {
   const { id } = params;
   const { searchParams } = new URL(request.url);

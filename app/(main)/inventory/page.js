@@ -20,10 +20,13 @@ function agingDays(item) {
 
 // Lazy thumbnail: only items flagged has_image trigger a request,
 // and only for their own image — list payloads stay small.
+// The updated_at version busts the browser cache whenever the product
+// is saved, so a replaced photo shows up immediately instead of
+// serving the stale cached copy for up to an hour.
 function ItemThumb({ item, onOpen }) {
-  // Direct image URL — the endpoint streams raw bytes with caching,
-  // so thumbs render without per-item JSON fetches.
-  const src = item.has_image ? `/api/items/${item.id}/image` : null;
+  const src = item.has_image
+    ? `/api/items/${item.id}/image?v=${encodeURIComponent(item.updated_at || '')}`
+    : null;
 
   if (!src) {
     return <div style={{ width: 40, height: 40, borderRadius: 4, background: '#f4f0ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>—</div>;
@@ -42,6 +45,10 @@ export default function InventoryPage() {
   const [importing, setImporting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
+  // Preview for the edit form. Untouched edits show the stored photo
+  // straight from the image endpoint; the heavy base64 never enters
+  // React state unless the user uploads a replacement.
+  const [previewSrc, setPreviewSrc] = useState(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const imageTouchedRef = useRef(false);
@@ -93,6 +100,7 @@ export default function InventoryPage() {
       if (!res.ok) { setError(data.error || 'Upload failed.'); return; }
       imageTouchedRef.current = true;
       setForm((prev) => ({ ...prev, image_url: data.url }));
+      setPreviewSrc(data.url);
       flash(setSuccess, `Image uploaded and optimized (${data.sizeKB}KB).`);
     } catch {
       setError('Upload failed.');
@@ -109,9 +117,15 @@ export default function InventoryPage() {
       sku: form.sku, name: form.name, category: form.category,
       quantity: parseInt(form.quantity, 10) || 0, price: parseFloat(form.price) || 0,
       cost_price: form.cost_price === '' ? null : parseFloat(form.cost_price),
-      notes: form.notes, image_url: form.image_url || null,
+      notes: form.notes,
     };
     const isEdit = !!form.id;
+    // Send the photo only when it changed in this session: a new data URL
+    // replaces the stored one, '' (removed) clears it, and an untouched
+    // edit keeps whatever is already saved server-side.
+    if (!isEdit || imageTouchedRef.current) {
+      payload.image_url = form.image_url || null;
+    }
     const res = await fetch(isEdit ? `/api/items/${form.id}` : '/api/items', {
       method: isEdit ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -120,6 +134,7 @@ export default function InventoryPage() {
     const data = await res.json();
     if (!res.ok) { setError(data.error || 'Something went wrong.'); return; }
     setForm(EMPTY_FORM);
+    setPreviewSrc(null);
     flash(setSuccess, isEdit ? 'Item updated.' : 'Item added.');
     load(search);
   }
@@ -127,19 +142,17 @@ export default function InventoryPage() {
   function editRow(item) {
     imageTouchedRef.current = false;
     setForm({ id: item.id, sku: item.sku, name: item.name, category: item.category || '', quantity: String(item.quantity), price: String(item.price), cost_price: item.cost_price == null ? '' : String(item.cost_price), notes: item.notes || '', image_url: '' });
-    // Load the stored image on demand so edits keep it (data URL form)
-    if (item.has_image) {
-      fetch(`/api/items/${item.id}/image?format=data`)
-        .then((r) => r.json())
-        .then((d) => { if (!imageTouchedRef.current) setForm((prev) => (prev.id === item.id ? { ...prev, image_url: d.image_url || '' } : prev)); })
-        .catch(() => {});
-    }
+    // Preview the stored photo straight from the image endpoint.
+    // The base64 stays server-side; handleSubmit only sends
+    // image_url when the user uploads or removes a photo, so
+    // there is no async fetch that can race with those actions.
+    setPreviewSrc(item.has_image ? `/api/items/${item.id}/image?v=${encodeURIComponent(item.updated_at || '')}` : null);
   }
 
   async function deleteRow(id) {
     if (!confirm('Delete this item?')) return;
     await fetch(`/api/items/${id}`, { method: 'DELETE' });
-    if (form.id === id) setForm(EMPTY_FORM);
+    if (form.id === id) { setForm(EMPTY_FORM); setPreviewSrc(null); }
     flash(setSuccess, 'Item deleted.');
     load(search);
   }
@@ -212,10 +225,10 @@ export default function InventoryPage() {
                   {uploading ? 'Optimizing...' : 'Upload Image'}
                   <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleImageUpload} style={{ display: 'none' }} disabled={uploading} />
                 </label>
-                {form.image_url && (
+                {previewSrc && (
                   <>
-                    <img src={form.image_url} alt="Preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }} onClick={() => setLightboxImage(form.image_url)} />
-                    <button type="button" className="btn btn-sm btn-danger" onClick={() => { imageTouchedRef.current = true; setForm({ ...form, image_url: '' }); }}>Remove</button>
+                    <img src={previewSrc} alt="Preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }} onClick={() => setLightboxImage(previewSrc)} />
+                    <button type="button" className="btn btn-sm btn-danger" onClick={() => { imageTouchedRef.current = true; setForm({ ...form, image_url: '' }); setPreviewSrc(null); }}>Remove</button>
                   </>
                 )}
               </div>
@@ -223,7 +236,7 @@ export default function InventoryPage() {
           </div>
           <div className="row" style={{ marginTop: 14 }}>
             <button type="submit" className="btn btn-primary">{form.id ? 'Update Item' : 'Add Item'}</button>
-            {form.id && <button type="button" className="btn" onClick={() => setForm(EMPTY_FORM)}>Cancel Edit</button>}
+            {form.id && <button type="button" className="btn" onClick={() => { setForm(EMPTY_FORM); setPreviewSrc(null); }}>Cancel Edit</button>}
           </div>
         </form>
       </div>

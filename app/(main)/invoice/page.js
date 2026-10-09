@@ -5,8 +5,11 @@ import { useEffect, useState, useCallback } from 'react';
 // only items that have an image trigger a request.
 function ItemThumb({ item }) {
   // Direct image URL (endpoint streams raw bytes with ETag caching)
-  // so thumbs render without per-item JSON fetches.
-  const src = item.has_image ? `/api/items/${item.id}/image` : null;
+  // so thumbs render without per-item JSON fetches. The updated_at
+  // version busts the browser cache so replaced photos show up here too.
+  const src = item.has_image
+    ? `/api/items/${item.id}/image?v=${encodeURIComponent(item.updated_at || '')}`
+    : null;
   const [hover, setHover] = useState(false);
 
   if (!src) {
