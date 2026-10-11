@@ -51,8 +51,8 @@ export default function ReportsPage() {
           <div>
             <div className="stats-grid">
               <div className="stat-card"><div className="value">{t.invoiceCount}</div><div className="label">Invoices</div></div>
-              <div className="stat-card"><div className="value">{t.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div><div className="label">Net Revenue</div></div>
-              <div className="stat-card"><div className="value">{t.profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div><div className="label">Net Profit</div></div>
+              <div className="stat-card"><div className="value">{t.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div><div className="label">Net Revenue (excl. delivery)</div></div>
+              <div className="stat-card"><div className="value">{t.profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div><div className="label">Net Profit (excl. delivery)</div></div>
               <div className="stat-card"><div className="value">{t.marginPct.toFixed(1)}%</div><div className="label">Margin</div></div>
             </div>
             <p>Gross Sales: {t.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
