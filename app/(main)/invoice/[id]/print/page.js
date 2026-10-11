@@ -26,6 +26,7 @@ export default async function InvoicePrintPage({ params }) {
   const dVal = parseFloat(invoice.discount_value) || 0;
   const discountAmount = invoice.discount_type === 'percent' ? subtotal * (dVal / 100) : dVal;
   const delivery = parseFloat(invoice.delivery_charge) || 0;
+  const total = parseFloat(invoice.total) || (subtotal - discountAmount + delivery);
   const fmt = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const dateStr = new Date(invoice.invoice_date).toISOString().slice(0, 10);
 
