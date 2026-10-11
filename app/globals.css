@@ -18,6 +18,25 @@
   --success: #28a745;
 }
 
+/* Self-hosted font covering Bangla (বাংলা) + English so product
+   names, customer names and invoices render with proper spelling
+   everywhere — on screen and in print. */
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('/fonts/NotoSansBengali-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('/fonts/NotoSansBengali-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -25,7 +44,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Noto Sans Bengali', 'Nirmala UI', 'Vrinda', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -702,4 +721,22 @@ tr.low-stock {
 .switch input:disabled + .slider {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Print (print view page): only the document prints, no chrome */
+@media print {
+  .nav,
+  .print-only-hidden,
+  .no-print {
+    display: none !important;
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+  }
+
+  body {
+    background: white;
+  }
 }
