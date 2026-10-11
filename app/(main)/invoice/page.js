@@ -115,7 +115,7 @@ export default function InvoicePage() {
       const res = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoice_no: invoiceNo, invoice_date: invoiceDate, customer_name: customerName, customer_phone: customerPhone, customer_address: customerAddress, parcel_id: parcelId, discount_type: discountValue > 0 ? discountType : 'none', discount_value: dVal, delivery_charge: delivery, line_items: lineItems }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Could not create invoice.'); return; }
-      window.open(`/api/invoices/${data.invoice.id}/pdf`, '_blank');
+      window.open(`/invoice/${data.invoice.id}/print`, '_blank');
       resetForm(); loadItems();
     } finally { setSaving(false); }
   }
@@ -186,7 +186,7 @@ export default function InvoicePage() {
           </div>
           <div className="total-box"><div className="line">Subtotal: {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>{discountAmount > 0 && <div className="line">Discount: -{discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>}{delivery > 0 && <div className="line">Delivery: +{delivery.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>}<div className="grand">Total: {total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div></div>
         </div>
-        <div style={{ marginTop: 16 }}><button className="btn btn-primary" onClick={generateInvoice} disabled={saving}>{saving ? 'Generating...' : 'Generate Invoice (PDF)'}</button></div>
+        <div style={{ marginTop: 16 }}><button className="btn btn-primary" onClick={generateInvoice} disabled={saving}>{saving ? 'Generating...' : 'Generate Invoice'}</button></div>
       </div>
     </div>
   );

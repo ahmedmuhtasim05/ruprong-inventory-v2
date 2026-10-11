@@ -1,6 +1,5 @@
 import { db } from '../../../../../lib/db';
 import PrintActions from './PrintActions';
-
 // Browser print view of a single invoice.
 // Rendering here (instead of only the pdf-lib PDF) means the browser
 // does full Bangla text shaping, so Bangla product/customer names
@@ -35,8 +34,8 @@ export default async function InvoicePrintPage({ params }) {
 
   return (
     <div>
-      <PrintActions />
-      <div style={{ maxWidth: 720, margin: '0 auto', background: '#fff', padding: '36px 40px', border: '1px solid #e5e0d8', borderRadius: 8 }}>
+      <PrintActions invoiceNo={invoice.invoice_no} />
+      <div id="invoice-doc" style={{ maxWidth: 720, margin: '0 auto', background: '#fff', padding: '36px 40px', border: '1px solid #e5e0d8', borderRadius: 8 }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid var(--primary)', paddingBottom: 14, marginBottom: 18 }}>
           <div>
