@@ -139,12 +139,12 @@ export default function InvoicePage() {
       </div>
       <div className="card">
         <h2>Add Item to Invoice</h2>
-        <div className="row">
-          <div className="field" style={{ position: 'relative' }}>
+        <div className="row" style={{ marginBottom: 12 }}>
+          <div className="field" style={{ position: 'relative', flex: '1 1 100%' }}>
             <label>From inventory</label>
             <button type="button" onClick={() => setDropdownOpen((v) => !v)}
-              style={{ minWidth: 0, width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'white', cursor: 'pointer', fontSize: 14, textAlign: 'left' }}>
-              {selectedItem ? (<><ItemThumb item={selectedItem} /><span>{selectedItem.sku} - {selectedItem.name} (stock: {selectedItem.quantity})</span></>) : <span className="muted">-- choose --</span>}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', border: '1px solid var(--border)', borderRadius: 6, background: 'white', cursor: 'pointer', fontSize: 15, textAlign: 'left' }}>
+              {selectedItem ? (<><ItemThumb item={selectedItem} /><span>{selectedItem.sku} - {selectedItem.name} <span className="muted">(stock: {selectedItem.quantity})</span></span></>) : <span className="muted">-- choose --</span>}
               <span style={{ marginLeft: 'auto' }}>▼</span>
             </button>
             {dropdownOpen && (
@@ -166,6 +166,8 @@ export default function InvoicePage() {
               </>
             )}
           </div>
+        </div>
+        <div className="row">
           <div className="field"><label>or custom</label><input value={customDesc} onChange={(e) => { setCustomDesc(e.target.value); setSelectedItemId(''); }} /></div>
           <div className="field"><label>Qty</label><input type="number" value={qty} onChange={(e) => setQty(e.target.value)} style={{ minWidth: 70 }} /></div>
           <div className="field"><label>Price</label><input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} /></div>
