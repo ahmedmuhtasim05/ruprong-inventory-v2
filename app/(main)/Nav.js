@@ -44,7 +44,10 @@ export default function Nav() {
 
   return (
     <nav className="nav">
-      <span className="nav-brand"><img src="/logo.png" alt="RupRong" style={{ height: 30, width: 'auto', display: 'block' }} /></span>
+      <span className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img src="/logo.png" alt="RupRong" style={{ height: 44, width: 'auto', display: 'block' }} />
+        <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--primary)' }}>RupRong</span>
+      </span>
       <div className={`nav-tabs${menuOpen ? ' open' : ''}`}>
         {visibleTabs.map((t) => (
           <Link key={t.href} href={t.href} className={pathname.startsWith(t.href) ? 'active' : ''} onClick={() => setMenuOpen(false)}>
