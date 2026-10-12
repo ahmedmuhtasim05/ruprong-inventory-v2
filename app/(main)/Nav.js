@@ -12,36 +12,44 @@ const TABS = [
   { href: '/settings', label: 'Settings', key: 'settings' },
 ];
 
-export default function Nav() {
+export default function Nav({ initialAuthed = false, initialPermissions = [], initialIsSuper = false }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [permissions, setPermissions] = useState(null); // null = still loading
-  const [isSuper, setIsSuper] = useState(false);
+  const [authed, setAuthed] = useState(initialAuthed);
+  const [permissions, setPermissions] = useState(initialPermissions);
+  const [isSuper, setIsSuper] = useState(initialIsSuper);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Refresh permissions from the DB on every page (fresh role data).
+  // Anonymous visitors skip this entirely — they only ever see Home.
   useEffect(() => {
+    if (!authed) return;
     let alive = true;
     fetch('/api/auth/me')
       .then((r) => (r.ok ? r.json() : null))
       .then((me) => {
-        if (!alive || !me) return;
+        if (!alive) return;
+        if (!me) { setPermissions([]); setAuthed(false); return; }
         setPermissions(me.permissions || []);
         setIsSuper(me.is_super === true);
       })
       .catch(() => {});
     return () => { alive = false; };
-  }, [pathname]);
+  }, [pathname, authed]);
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    setAuthed(false);
+    setPermissions([]);
+    router.push('/home');
     router.refresh();
   }
 
-  // While permissions load, show all tabs to avoid a flash of empty nav.
+  // Home is public — visible to everyone. The remaining tabs are
+  // filtered by the user's role permissions (null while loading).
   const visibleTabs = permissions === null || isSuper
     ? TABS
-    : TABS.filter((t) => permissions.includes(t.key));
+    : TABS.filter((t) => t.key === 'home' || permissions.includes(t.key));
 
   return (
     <nav className="nav">
@@ -55,7 +63,11 @@ export default function Nav() {
             {t.label}
           </Link>
         ))}
-        <span className="logout" onClick={() => { setMenuOpen(false); logout(); }}>Log Out</span>
+        {authed ? (
+          <span className="logout" onClick={() => { setMenuOpen(false); logout(); }}>Log Out</span>
+        ) : (
+          <Link href="/login" className="logout" onClick={() => setMenuOpen(false)}>Log In</Link>
+        )}
       </div>
       <button type="button" className="nav-toggle" aria-label="Toggle menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
         {menuOpen ? '✕' : '☰'}

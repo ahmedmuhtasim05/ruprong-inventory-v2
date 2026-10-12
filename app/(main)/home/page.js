@@ -41,7 +41,8 @@ export default function HomePage() {
   const [lightboxImage, setLightboxImage] = useState(null);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/items');
+    // Public catalog endpoint — the Home page is open to everyone.
+    const res = await fetch('/api/catalog');
     const data = await res.json();
     setItems(data.items || []);
     setLoading(false);

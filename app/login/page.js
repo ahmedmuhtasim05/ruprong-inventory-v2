@@ -21,7 +21,7 @@ function LoginForm() {
         body: JSON.stringify({ username, password }),
       });
       if (res.ok) {
-        const next = params.get('next') || '/inventory';
+        const next = params.get('next') || '/home';
         router.push(next);
         router.refresh();
       } else {

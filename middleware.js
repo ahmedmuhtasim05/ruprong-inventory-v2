@@ -5,14 +5,23 @@ import { tabKeyForPath } from './lib/permissions';
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const isPublic =
+    pathname === '/' ||
     pathname === '/login' ||
+    pathname === '/home' ||
     pathname.startsWith('/api/auth/login') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/fonts') ||
     pathname.startsWith('/logo') ||
     pathname.startsWith('/favicon');
 
-  if (isPublic) return NextResponse.next();
+  // Public read-only product data (Home page is open to everyone):
+  // the catalog list and product photos. Everything else stays gated.
+  const isPublicGet =
+    request.method === 'GET' &&
+    (pathname === '/api/catalog' ||
+      (pathname.startsWith('/api/items/') && pathname.endsWith('/image')));
+
+  if (isPublic || isPublicGet) return NextResponse.next();
 
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = await verifySessionToken(token);
