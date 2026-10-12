@@ -39,8 +39,7 @@ export default async function InvoicePrintPage({ params }) {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid var(--primary)', paddingBottom: 14, marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>RupRong Inventory</div>
-            <div className="muted">By Ananna</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>RupRong by Ananna</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 2 }}>INVOICE</div>
