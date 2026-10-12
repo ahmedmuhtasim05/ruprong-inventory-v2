@@ -36,6 +36,9 @@ export default async function InvoicePrintPage({ params }) {
     <div>
       <PrintActions invoiceNo={invoice.invoice_no} />
       <div id="invoice-doc" style={{ maxWidth: 720, margin: '0 auto', background: '#fff', padding: '36px 40px', border: '1px solid #e5e0d8', borderRadius: 8 }}>
+        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+          <img src="/logo.png" alt="RupRong by Ananna" style={{ height: 68, width: 'auto', objectFit: 'contain' }} />
+        </div>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid var(--primary)', paddingBottom: 14, marginBottom: 18 }}>
           <div>
