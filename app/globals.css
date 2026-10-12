@@ -723,6 +723,35 @@ tr.low-stock {
   cursor: not-allowed;
 }
 
+/* Home category filter tabs */
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.15s;
+}
+
+.filter-tab:hover {
+  background: var(--bg);
+}
+
+.filter-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
 /* Home product grid — 6 per row on desktop/laptop,
    3 per row on tablet and mobile */
 .product-grid {

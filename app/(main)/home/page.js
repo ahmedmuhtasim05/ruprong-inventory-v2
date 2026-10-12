@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 
 // Product image with the inventory-style lightbox:
 // clicking the photo opens a full-screen dark overlay with
@@ -37,6 +37,7 @@ function ProductCard({ item, onOpenImage }) {
 export default function HomePage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('All');
   const [lightboxImage, setLightboxImage] = useState(null);
 
   const load = useCallback(async () => {
@@ -48,6 +49,22 @@ export default function HomePage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Categories are derived from the product list itself, so
+  // uploading a new product or creating a new category in the
+  // Inventory tab shows up here automatically on the next load.
+  const categories = useMemo(() => {
+    const cats = new Set();
+    items.forEach((i) => {
+      const c = (i.category || '').toString().trim();
+      if (c) cats.add(c);
+    });
+    return ['All', ...Array.from(cats).sort()];
+  }, [items]);
+
+  const visibleItems = activeCategory === 'All'
+    ? items
+    : items.filter((i) => (i.category || '').toString().trim() === activeCategory);
+
   return (
     <div>
       <h2 style={{ color: 'var(--primary)' }}>Products</h2>
@@ -56,11 +73,29 @@ export default function HomePage() {
       ) : items.length === 0 ? (
         <div className="card"><p className="muted" style={{ textAlign: 'center', padding: 20 }}>No products yet.</p></div>
       ) : (
-        <div className="product-grid">
-          {items.map((it) => (
-            <ProductCard key={it.id} item={it} onOpenImage={setLightboxImage} />
-          ))}
-        </div>
+        <>
+          <div className="filter-tabs">
+            {categories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={`filter-tab${activeCategory === c ? ' active' : ''}`}
+                onClick={() => setActiveCategory(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          {visibleItems.length === 0 ? (
+            <div className="card"><p className="muted" style={{ textAlign: 'center', padding: 20 }}>No products in this category.</p></div>
+          ) : (
+            <div className="product-grid">
+              {visibleItems.map((it) => (
+                <ProductCard key={it.id} item={it} onOpenImage={setLightboxImage} />
+              ))}
+            </div>
+          )}
+        </>
       )}
       {lightboxImage && (
         <div
