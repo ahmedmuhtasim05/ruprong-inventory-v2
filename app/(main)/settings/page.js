@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { HexColorPicker } from 'react-colorful';
 
 const PERMISSION_TABS = [
+  { key: 'home', label: 'Home' },
   { key: 'inventory', label: 'Inventory' },
   { key: 'invoice', label: 'Create Invoice' },
   { key: 'history', label: 'Invoice History' },
